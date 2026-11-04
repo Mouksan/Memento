@@ -168,15 +168,23 @@
         0 10px 28px rgba(0, 0, 0, 0.4);
 }
 
-.mmt-spread {
-    display: grid;
-    grid-template-columns: 1fr 34px 1fr;
+/* Книга: страницы листает PageFlip, он сам задаёт им размер и положение */
+.mmt-book-host {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.mmt-book {
+    width: 100%;
 }
 
 .mmt-page {
     position: relative;
+    box-sizing: border-box;
     padding: 18px 18px 26px;
-    background: var(--mmt-page);
+    overflow: hidden;
+    background-color: var(--mmt-page);
     box-shadow: inset 0 0 0 1px var(--mmt-page-edge);
 }
 
@@ -216,14 +224,43 @@
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
-/* Кольца в корешке */
+/* Кольца в корешке — поверх книги, по центру разворота */
 
 .mmt-rings {
+    position: absolute;
+    top: 14px;
+    bottom: 14px;
+    left: 50%;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     justify-content: space-around;
     align-items: center;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.35));
+    width: 14px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.15) 50%, rgba(0, 0, 0, 0.45));
+}
+
+.mmt-portrait .mmt-rings {
+    display: none;
+}
+
+/* Одна страница (телефон): дырки у левого края */
+.mmt-portrait .mmt-page-left {
+    padding: 18px 18px 26px 30px;
+    border-radius: 2px 6px 6px 2px;
+    background-image: linear-gradient(270deg, transparent 90%, rgba(0, 0, 0, 0.35));
+}
+
+.mmt-portrait .mmt-page-left .mmt-holes {
+    right: auto;
+    left: 8px;
+}
+
+.mmt-portrait .mmt-page-left .mmt-page-num {
+    left: auto;
+    right: 18px;
 }
 
 .mmt-rings span {
@@ -668,66 +705,13 @@
     background: rgba(127, 127, 127, 0.22);
 }
 
-/* ---------- Временный просмотр карточки (до этапа 4) ---------- */
 
-.mmt-peek {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.55);
-}
 
-.mmt-peek[hidden] {
-    display: none;
-}
 
-.mmt-peek-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: min(440px, 100%);
-    max-height: 100%;
-    overflow-y: auto;
-    padding: 18px 20px;
-    color: var(--SmartThemeBodyColor);
-    background: var(--SmartThemeBlurTintColor);
-    border: 1px solid var(--mmt-rar);
-    border-radius: 12px;
-}
 
-.mmt-peek-img {
-    display: block;
-    width: min(260px, 70%);
-    aspect-ratio: 3 / 4;
-    margin: 0 auto 4px;
-    object-fit: cover;
-    border: 2px solid var(--mmt-rar);
-    border-radius: 6px;
-}
 
-.mmt-peek-wait {
-    padding: 28px 0;
-    text-align: center;
-    opacity: 0.7;
-}
 
-.mmt-peek-error {
-    padding: 8px 10px;
-    font-size: 0.85em;
-    color: #e0a23c;
-    word-break: break-word;
-    background: rgba(224, 162, 60, 0.1);
-    border-radius: 6px;
-}
 
-.mmt-peek-actions .mmt-btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
 
 /* Ящик: рисование и стили */
 
@@ -788,41 +772,267 @@
     margin-top: 8px;
 }
 
-.mmt-peek-stars {
+/* ---------- Большой вид карточки ---------- */
+
+@font-face {
+    font-family: 'Memento Hand';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./fonts/caveat-cyrillic-500-normal.woff2') format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+    font-family: 'Memento Hand';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./fonts/caveat-latin-500-normal.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Сосед окна, а не ребёнок: у окна backdrop-filter, он бы зажал вид в размер окна */
+.mmt-view {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(4px);
+}
+
+.mmt-view[hidden] {
+    display: none;
+}
+
+.mmt-view-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    max-width: 880px;
+    width: 100%;
+    margin: auto;
+}
+
+.mmt-view-close {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    z-index: 2;
+}
+
+/* Карточка: переворачивается по клику */
+
+.mmt-flip {
+    flex: none;
+    width: min(380px, calc((100dvh - 120px) * 0.75));
+    aspect-ratio: 3 / 4;
+    padding: 0;
+    font: inherit;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    perspective: 1400px;
+}
+
+.mmt-flip:focus-visible {
+    outline: 2px solid var(--mmt-rar);
+    outline-offset: 4px;
+    border-radius: 12px;
+}
+
+.mmt-flip-inner {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.mmt-flipped .mmt-flip-inner {
+    transform: rotateY(180deg);
+}
+
+.mmt-face {
+    position: absolute;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+    border: 3px solid var(--mmt-rar);
+    border-radius: 12px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 24px color-mix(in srgb, var(--mmt-rar) 25%, transparent);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.mmt-face-front {
+    background: #121116;
+}
+
+.mmt-face-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mmt-face-blank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 3em;
+    color: color-mix(in srgb, var(--mmt-rar) 55%, transparent);
+    background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--mmt-rar) 22%, #16151b), #121116 70%);
+}
+
+.mmt-face-wait {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    font-size: 0.85em;
+    color: #f3f0ea;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 999px;
+}
+
+.mmt-face-caption {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 46px 18px 16px;
+    color: #f6f2ea;
+    text-align: left;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.82) 50%);
+}
+
+.mmt-face-stars {
     color: var(--mmt-rar);
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--mmt-rar) 60%, transparent);
 }
 
-.mmt-peek-title {
-    font-size: 1.2em;
+.mmt-face-title {
+    font-size: 1.3em;
     font-weight: 700;
+    line-height: 1.2;
 }
 
-.mmt-peek-quote {
+/* Оборот: бумага и записка от руки */
+
+.mmt-face-back {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 26px 24px 20px;
+    color: #2e2a40;
+    text-align: left;
+    transform: rotateY(180deg);
+    background:
+        radial-gradient(circle at 85% 90%, rgba(150, 120, 80, 0.12), transparent 40%),
+        radial-gradient(circle at 30% 20%, #fbf6ea, #efe5d0 75%);
+    box-shadow: inset 0 0 30px rgba(120, 95, 60, 0.18), 0 14px 40px rgba(0, 0, 0, 0.55);
+}
+
+.mmt-back-date {
+    align-self: flex-end;
+    font-family: 'Memento Hand', cursive;
+    font-size: 1.15em;
+    color: #6b5f4d;
+}
+
+.mmt-back-note {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    overflow-y: auto;
+    font-family: 'Memento Hand', cursive;
+    font-size: 1.55em;
+    line-height: 1.3;
+    color: #2b3566;
+    white-space: pre-wrap;
+}
+
+.mmt-back-title {
+    font-size: 0.75em;
+    letter-spacing: 0.5px;
+    color: #8a7c66;
+}
+
+/* Справа от карточки: цитата и кнопки */
+
+.mmt-view-side {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    max-height: calc(100dvh - 120px);
+    color: var(--SmartThemeBodyColor);
+}
+
+.mmt-view-quote {
     margin: 0;
-    padding: 2px 0 2px 12px;
-    line-height: 1.5;
+    padding: 4px 0 4px 14px;
+    overflow-y: auto;
+    line-height: 1.55;
     border-left: 2px solid var(--mmt-rar);
 }
 
-.mmt-peek-note {
-    font-style: italic;
+.mmt-view-meta {
+    font-size: 0.82em;
     line-height: 1.5;
-    opacity: 0.85;
+    opacity: 0.6;
 }
 
-.mmt-peek-meta {
-    font-size: 0.8em;
-    opacity: 0.55;
+.mmt-view-error {
+    padding: 8px 10px;
+    font-size: 0.85em;
+    color: #e0a23c;
+    word-break: break-word;
+    background: rgba(224, 162, 60, 0.1);
+    border-radius: 6px;
 }
 
-.mmt-peek-actions {
+.mmt-view-actions {
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-/* ---------- Телефон: по одной странице ---------- */
+.mmt-view-actions .mmt-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.mmt-btn-danger:hover {
+    color: #e8786a;
+}
+
+/* Сообщение, к которому прыгнули */
+.mes.mmt-flash {
+    animation: mmt-flash 1.8s ease-out;
+}
+
+@keyframes mmt-flash {
+    0%, 30% { box-shadow: inset 0 0 0 2px var(--SmartThemeQuoteColor); background-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 12%, transparent); }
+    100% { box-shadow: inset 0 0 0 2px transparent; background-color: transparent; }
+}
+
+/* ---------- Телефон ---------- */
 
 @media (max-width: 720px) {
     .mmt-overlay {
@@ -837,38 +1047,31 @@
         padding: 10px;
     }
 
-    .mmt-spread {
-        grid-template-columns: 1fr;
-    }
-
-    .mmt-rings {
-        display: none;
-    }
-
-    .mmt-show-left .mmt-page-right,
-    .mmt-show-right .mmt-page-left {
-        display: none;
-    }
-
-    .mmt-page,
-    .mmt-page-left,
-    .mmt-page-right {
-        padding: 14px 14px 24px 30px;
-        border-radius: 2px 6px 6px 2px;
-        background-image: linear-gradient(270deg, transparent 90%, rgba(0, 0, 0, 0.35));
-    }
-
-    .mmt-page-left .mmt-holes {
-        right: auto;
-        left: 8px;
-    }
-
-    .mmt-page-left .mmt-page-num {
-        left: auto;
-        right: 14px;
-    }
-
     .mmt-pockets {
         gap: 10px;
+    }
+
+    .mmt-view {
+        align-items: flex-start;
+        padding: 14px;
+    }
+
+    .mmt-view-inner {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .mmt-view-close {
+        top: -4px;
+        right: -4px;
+    }
+
+    .mmt-flip {
+        width: min(82vw, calc((100dvh - 260px) * 0.75), 360px);
+    }
+
+    .mmt-view-side {
+        width: 100%;
+        max-height: none;
     }
 }

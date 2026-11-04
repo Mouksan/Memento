@@ -86,21 +86,14 @@ export function pageHtml(page, side, pageNumber) {
         inner = `<div class="mmt-pockets mmt-pockets-grid">${pockets.join('')}</div>`;
     }
     return `
-        <div class="mmt-page mmt-page-${side}" data-page="${pageNumber}">
+        <div class="mmt-page mmt-page-${side}" data-page="${pageNumber}" data-density="soft">
             <div class="mmt-holes" aria-hidden="true"><span></span><span></span><span></span></div>
             ${inner}
             <div class="mmt-page-num">${pageNumber}</div>
         </div>`;
 }
 
-/** Разворот: две страницы и кольца посередине. */
-export function spreadHtml(pages, spreadIndex) {
-    const left = pages[spreadIndex * 2];
-    const right = pages[spreadIndex * 2 + 1];
-    return `
-        <div class="mmt-spread">
-            ${pageHtml(left, 'left', spreadIndex * 2 + 1)}
-            <div class="mmt-rings" aria-hidden="true"><span></span><span></span><span></span></div>
-            ${pageHtml(right, 'right', spreadIndex * 2 + 2)}
-        </div>`;
+/** Все страницы книги подряд: чётные — левые, нечётные — правые (листает PageFlip). */
+export function bookPagesHtml(pages) {
+    return pages.map((page, i) => pageHtml(page, i % 2 ? 'right' : 'left', i + 1)).join('');
 }

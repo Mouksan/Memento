@@ -2,26 +2,28 @@
 // Этап 1: фундамент — регистрация, альбом у каждого чата свой, сверка веток, пустой биндер
 // Этап 2: захват момента (выделение, меню сообщения, сцена) и текст карточки от модели
 // Этап 3: картинка — банана через Naistera или Gemini-compatible, рефы из Frame, «Перерисовать»
+// Этап 4: книга с перелистыванием, большой вид карточки с оборотом, «К моменту», дата из Hearthtide
 
 import {
     ctx, getSettings, saveSettings, escapeHtml, makeId, currentChatId, getAlbum, saveAlbum, saveAlbumDebounced,
     reconcileAlbum, memoriesWord, confirmPopup, findCardMessage, TOAST_TITLE,
 } from './store.js';
 import { drawImage, deleteImageFile, getMissingDrawSetting } from './image.js';
-import { layoutPages, spreadHtml, pageIndexOf, starsText, rarityOf } from './album.js';
+import { layoutPages, bookPagesHtml, pageIndexOf, starsText, rarityOf } from './album.js';
+import { PageFlip } from './lib/page-flip.module.js';
+import { findHearthDate } from './hearth.js';
 import { addSettingsDrawer, ICON } from './settings.js';
 import { initCapture, resetCapture, addMessageButtons } from './capture.js';
 import { buildMomentPrompt, extractJson, cardFromAnswer, cleanMessageText } from './prompt.js';
 import { requestModel } from './connection.js';
 
-const NARROW = window.matchMedia('(max-width: 720px)');   // на телефоне — по одной странице
-
 // ---------- Окно ----------
 
 let overlayEl = null;
-let pageCursor = 0;      // номер текущей страницы (на широком экране показываем её разворот)
+let pageCursor = 0;      // номер текущей страницы
 let view = 'album';      // 'album' | 'scene'
-let peekId = null;       // открытая карточка
+let viewId = null;       // открытая в большом виде карточка
+let book = null;         // PageFlip
 
 function buildWindow() {
     const overlay = document.createElement('div');
@@ -41,8 +43,8 @@ function buildWindow() {
                 <div class="mmt-pager"></div>
                 <button class="mmt-icon-btn mmt-next" type="button" title="Вперёд"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
-            <div class="mmt-peek" hidden></div>
-        </div>`;
+        </div>
+        <div class="mmt-view" hidden></div>`;
 
     overlay.querySelector('.mmt-close').addEventListener('click', closeWindow);
     overlay.querySelector('.mmt-prev').addEventListener('click', () => turn(-1));
@@ -51,7 +53,7 @@ function buildWindow() {
 
     overlay.querySelector('.mmt-body').addEventListener('click', (e) => {
         const card = e.target.closest('.mmt-card[data-card]');
-        if (card) openPeek(card.dataset.card);
+        if (card) openCardView(card.dataset.card);
     });
 
     // Клик мимо окна закрывает его (mousedown — чтобы выделение текста не закрывало случайно)
@@ -71,13 +73,21 @@ function onKeyDown(e) {
     if (!isOpen()) return;
     if (document.querySelector('dialog[open]')) return;   // попап таверны поверх — пусть он сам
     if (e.key === 'Escape') {
-        if (peekId) closePeek();
+        if (viewId) closeCardView();
         else if (view === 'scene') setView('album');
         else closeWindow();
         return;
     }
     if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (view !== 'album' || peekId) return;
+    if (viewId) {
+        if (e.key === ' ' || e.key === 'Enter') {
+            if (e.target instanceof Element && e.target.closest('button:not(.mmt-flip)')) return;
+            e.preventDefault();
+            flipCard();
+        }
+        return;
+    }
+    if (view !== 'album') return;
     if (e.key === 'ArrowLeft') turn(-1);
     else if (e.key === 'ArrowRight') turn(1);
 }
@@ -92,31 +102,100 @@ function openWindow(nextView = 'album') {
 
 function closeWindow() {
     if (!overlayEl) return;
-    closePeek();
+    closeCardView();
+    destroyBook();
     overlayEl.classList.remove('mmt-open');
     document.removeEventListener('keydown', onKeyDown);
 }
 
 function setView(next) {
     view = next;
-    closePeek();
+    closeCardView();
     render();
 }
 
-// ---------- Листание ----------
+// ---------- Книга (PageFlip) ----------
 
-function step() {
-    return NARROW.matches ? 1 : 2;
+function destroyBook() {
+    if (!book) return;
+    try { book.destroy(); } catch { /* уже снята */ }
+    book = null;
+}
+
+function isLandscape() {
+    try {
+        return book?.getOrientation?.() === 'landscape';
+    } catch {
+        return window.innerWidth > 720;
+    }
 }
 
 function turn(direction) {
-    const album = getAlbum();
-    if (!album || view !== 'album') return;
-    const total = layoutPages(album.cards).length;
-    const next = pageCursor + direction * step();
-    if (next < 0 || next >= total) return;
-    pageCursor = next;
-    render();
+    if (!book || view !== 'album' || viewId) return;
+    if (direction > 0) book.flipNext('top');
+    else book.flipPrev('top');
+}
+
+function updatePager() {
+    if (!overlayEl || !book) return;
+    const total = book.getPageCount();
+    const index = book.getCurrentPageIndex();
+    pageCursor = index;
+    const landscape = isLandscape();
+    const shown = landscape ? `${index + 1}–${Math.min(total, index + 2)}` : `${index + 1}`;
+    overlayEl.querySelector('.mmt-pager').textContent = `${shown} из ${total}`;
+    overlayEl.querySelector('.mmt-prev').disabled = index <= 0;
+    overlayEl.querySelector('.mmt-next').disabled = index + (landscape ? 2 : 1) >= total;
+    overlayEl.querySelector('.mmt-binder')?.classList.toggle('mmt-portrait', !landscape);
+}
+
+/** Размер страницы под окно: книга должна влезть по высоте без прокрутки. */
+function pageSize() {
+    const maxHeight = Math.max(300, Math.min(640, window.innerHeight - 230));
+    return { width: 400, height: 540, maxHeight, maxWidth: Math.round(maxHeight / 1.35) };
+}
+
+function renderBook(body, album) {
+    destroyBook();
+    const pages = layoutPages(album.cards);
+    pageCursor = Math.max(0, Math.min(pageCursor, pages.length - 1));
+    const count = album.cards.length;
+
+    body.innerHTML = `
+        <div class="mmt-binder mmt-theme-${escapeHtml(getSettings().theme)}">
+            <div class="mmt-book-host"><div class="mmt-book">${bookPagesHtml(pages)}</div></div>
+            <div class="mmt-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+            ${count ? '' : `
+                <div class="mmt-empty-note">
+                    Здесь пока пусто. Выдели любимый момент в чате — и он станет первой карточкой.
+                </div>`}
+        </div>`;
+
+    const bookEl = body.querySelector('.mmt-book');
+    const size = pageSize();
+    book = new PageFlip(bookEl, {
+        width: size.width,
+        height: size.height,
+        size: 'stretch',
+        minWidth: 200,
+        maxWidth: size.maxWidth,
+        minHeight: 270,
+        maxHeight: size.maxHeight,
+        usePortrait: true,
+        showCover: false,
+        autoSize: true,
+        startPage: pageCursor,
+        flippingTime: 650,
+        maxShadowOpacity: 0.35,
+        showPageCorners: true,
+        disableFlipByClick: true,     // листаем стрелками и уголком — клик по странице не перелистывает
+        clickEventForward: true,      // клики по карточкам доходят до нас
+        mobileScrollSupport: false,
+    });
+    book.loadFromHTML(bookEl.querySelectorAll('.mmt-page'));
+    book.on('flip', updatePager);
+    book.on('changeOrientation', updatePager);
+    updatePager();
 }
 
 // ---------- Отрисовка ----------
@@ -133,6 +212,7 @@ function render() {
     sceneBtn.classList.toggle('mmt-active', view === 'scene');
 
     if (!album) {
+        destroyBook();
         chatName.textContent = '';
         footer.hidden = true;
         body.innerHTML = `<div class="mmt-nochat">Открой чат — у каждого чата свой альбом.</div>`;
@@ -145,33 +225,14 @@ function render() {
     chatName.title = chatId;
 
     if (view === 'scene') {
+        destroyBook();
         footer.hidden = true;
         renderScenePane(body);
         return;
     }
 
-    const pages = layoutPages(album.cards);
-    pageCursor = Math.max(0, Math.min(pageCursor, pages.length - 1));
-    const spread = Math.floor(pageCursor / 2);
-    const side = pageCursor % 2 ? 'right' : 'left';
-
-    body.innerHTML = `
-        <div class="mmt-binder mmt-theme-${escapeHtml(getSettings().theme)} mmt-show-${side}">
-            ${spreadHtml(pages, spread)}
-            ${count ? '' : `
-                <div class="mmt-empty-note">
-                    Здесь пока пусто. Выдели любимый момент в чате — и он станет первой карточкой.
-                </div>`}
-        </div>`;
-
     footer.hidden = false;
-    const narrow = NARROW.matches;
-    const shown = narrow ? `${pageCursor + 1}` : `${spread * 2 + 1}–${spread * 2 + 2}`;
-    overlayEl.querySelector('.mmt-pager').textContent = `${shown} из ${pages.length}`;
-    overlayEl.querySelector('.mmt-prev').disabled = narrow ? pageCursor === 0 : spread === 0;
-    overlayEl.querySelector('.mmt-next').disabled = narrow
-        ? pageCursor >= pages.length - 1
-        : (spread + 1) * 2 >= pages.length;
+    renderBook(body, album);
 }
 
 // ---------- Выбор сцены (как в Junket) ----------
@@ -325,7 +386,7 @@ async function develop(moment) {
             sendDate: message?.send_date ?? null,
             swipeId: message?.swipe_id ?? 0,
             speaker: message?.name || '',
-            calendarDate: null,
+            calendarDate: findHearthDate(ctx().chat, fields.mesId) || false,
             createdAt: Date.now(),
         };
         const album = getAlbum();
@@ -370,7 +431,7 @@ function canDeleteFile(card, path) {
 function refreshViews(cardId) {
     if (!isOpen()) return;
     if (view === 'album') render();
-    if (peekId === cardId) openPeek(cardId);
+    if (viewId === cardId) openCardView(cardId);
 }
 
 async function applyImage(card, image) {
@@ -477,47 +538,150 @@ async function deliverMailbox() {
     if (changed) saveAlbumDebounced();
 }
 
-// ---------- Временный просмотр карточки (большой вид с оборотом — этап 4) ----------
+// ---------- Большой вид карточки ----------
 
-function openPeek(cardId) {
-    const album = getAlbum();
-    const card = album?.cards.find((c) => c.id === cardId);
+let viewFlipped = false;
+
+/** Дата и место из Hearthtide: сохраняем один раз, старым карточкам — при первом открытии. */
+function ensureCalendarDate(card) {
+    if (card.calendarDate !== null && card.calendarDate !== undefined) return;
+    const index = findCardMessage(card);
+    if (index < 0) return;
+    card.calendarDate = findHearthDate(ctx().chat, index) || false;   // false — смотрели, тега нет
+    saveAlbumDebounced();
+}
+
+function dateLine(card) {
+    const d = card.calendarDate;
+    if (!d) return '';
+    return [d.label, d.place].filter(Boolean).join(' · ');
+}
+
+function openCardView(cardId) {
+    const card = findCard(cardId);
     if (!card || !overlayEl) return;
-    peekId = cardId;
-    const where = findCardMessage(card);
+    if (viewId !== cardId) viewFlipped = false;
+    viewId = cardId;
+    ensureCalendarDate(card);
+
+    const rarity = rarityOf(card);
     const drawing = card.drawStatus === 'drawing';
-    const box = overlayEl.querySelector('.mmt-peek');
-    let art = '';
-    if (card.image) art = `<img class="mmt-peek-img" src="${escapeHtml(card.image)}" alt="">`;
-    if (drawing) art = `<div class="mmt-peek-wait"><i class="fa-solid fa-spinner fa-spin"></i> Рисуется…</div>`;
-    else if (card.drawStatus === 'error') art += `<div class="mmt-peek-error">${escapeHtml(card.drawError || 'Картинка не нарисовалась')}</div>`;
+    const where = findCardMessage(card);
+    const date = dateLine(card);
+
+    let art;
+    if (card.image) art = `<img class="mmt-face-img" src="${escapeHtml(card.image)}" alt="">`;
+    else art = `<div class="mmt-face-blank"><i class="fa-solid fa-camera-retro"></i></div>`;
+    if (drawing) art += `<div class="mmt-face-wait"><i class="fa-solid fa-spinner fa-spin"></i> Рисуется…</div>`;
+
+    const meta = [
+        where >= 0 ? `#${where}` : 'сообщения больше нет',
+        card.speaker ? escapeHtml(card.speaker) : '',
+    ].filter(Boolean).join(' · ');
+
+    const box = overlayEl.querySelector('.mmt-view');
     box.innerHTML = `
-        <div class="mmt-peek-card mmt-r${rarityOf(card)}">
-            ${art}
-            <div class="mmt-peek-stars">${starsText(card)}</div>
-            <div class="mmt-peek-title">${escapeHtml(card.title)}</div>
-            <blockquote class="mmt-peek-quote">${escapeHtml(card.quote)}</blockquote>
-            ${card.note ? `<div class="mmt-peek-note">${escapeHtml(card.note)}</div>` : ''}
-            <div class="mmt-peek-meta">${where >= 0 ? `#${where}` : 'сообщения больше нет'}${card.speaker ? ` · ${escapeHtml(card.speaker)}` : ''}</div>
-            <div class="mmt-peek-actions">
-                <button class="mmt-btn mmt-peek-delete" type="button"><i class="fa-solid fa-trash-can"></i> Удалить</button>
-                <button class="mmt-btn mmt-peek-redraw" type="button" ${drawing ? 'disabled' : ''}><i class="fa-solid fa-rotate"></i> Перерисовать</button>
-                <button class="mmt-btn mmt-peek-close" type="button">Закрыть</button>
+        <div class="mmt-view-inner">
+            <button class="mmt-icon-btn mmt-view-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            <button class="mmt-flip mmt-r${rarity} ${viewFlipped ? 'mmt-flipped' : ''}" type="button" title="Перевернуть">
+                <span class="mmt-flip-inner">
+                    <span class="mmt-face mmt-face-front">
+                        ${art}
+                        <span class="mmt-face-caption">
+                            <span class="mmt-face-stars">${starsText(card)}</span>
+                            <span class="mmt-face-title">${escapeHtml(card.title)}</span>
+                        </span>
+                    </span>
+                    <span class="mmt-face mmt-face-back">
+                        ${date ? `<span class="mmt-back-date">${escapeHtml(date)}</span>` : ''}
+                        <span class="mmt-back-note">${escapeHtml(card.note || '…')}</span>
+                        <span class="mmt-back-title">${escapeHtml(card.title)} ${starsText(card)}</span>
+                    </span>
+                </span>
+            </button>
+            <div class="mmt-view-side">
+                <blockquote class="mmt-view-quote mmt-r${rarity}">${escapeHtml(card.quote)}</blockquote>
+                <div class="mmt-view-meta">${meta}${date ? `<br>${escapeHtml(date)}` : ''}</div>
+                ${card.drawStatus === 'error' ? `<div class="mmt-view-error">${escapeHtml(card.drawError || 'Картинка не нарисовалась')}</div>` : ''}
+                <div class="mmt-view-actions">
+                    <button class="mmt-btn" type="button" data-act="flip"><i class="fa-solid fa-rotate-left"></i> Перевернуть</button>
+                    <button class="mmt-btn" type="button" data-act="jump" ${where >= 0 ? '' : 'disabled'}><i class="fa-solid fa-location-arrow"></i> К моменту</button>
+                    <button class="mmt-btn" type="button" data-act="redraw" ${drawing ? 'disabled' : ''}><i class="fa-solid fa-paintbrush"></i> Перерисовать</button>
+                    <button class="mmt-btn mmt-btn-danger" type="button" data-act="delete"><i class="fa-solid fa-trash-can"></i> Удалить</button>
+                </div>
             </div>
         </div>`;
     box.hidden = false;
-    box.querySelector('.mmt-peek-close').addEventListener('click', closePeek);
-    box.querySelector('.mmt-peek-redraw').addEventListener('click', () => drawCard(cardId));
-    box.querySelector('.mmt-peek-delete').addEventListener('click', () => deleteCard(cardId));
-    box.onmousedown = (e) => { if (e.target === box) closePeek(); };
+
+    box.querySelector('.mmt-view-close').addEventListener('click', closeCardView);
+    box.querySelector('.mmt-flip').addEventListener('click', flipCard);
+    box.querySelector('[data-act="flip"]').addEventListener('click', flipCard);
+    box.querySelector('[data-act="jump"]').addEventListener('click', () => jumpToMoment(cardId));
+    box.querySelector('[data-act="redraw"]').addEventListener('click', () => drawCard(cardId));
+    box.querySelector('[data-act="delete"]').addEventListener('click', () => deleteCard(cardId));
+    box.onmousedown = (e) => { if (e.target === box) closeCardView(); };
 }
 
-function closePeek() {
-    peekId = null;
-    const box = overlayEl?.querySelector('.mmt-peek');
+function flipCard() {
+    const el = overlayEl?.querySelector('.mmt-flip');
+    if (!el) return;
+    viewFlipped = !viewFlipped;
+    el.classList.toggle('mmt-flipped', viewFlipped);
+}
+
+function closeCardView() {
+    viewId = null;
+    viewFlipped = false;
+    const box = overlayEl?.querySelector('.mmt-view');
     if (box) {
         box.hidden = true;
         box.innerHTML = '';
+    }
+}
+
+// ---------- К моменту ----------
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function jumpToMoment(cardId) {
+    const card = findCard(cardId);
+    if (!card) return;
+    const index = findCardMessage(card);
+    if (index < 0) {
+        toastr.info('Этого сообщения в чате больше нет', TOAST_TITLE);
+        return;
+    }
+    closeWindow();
+
+    const selector = `#chat .mes[mesid="${index}"]`;
+    let el = document.querySelector(selector);
+    // Сообщение выше подгруженного — просим таверну догрузить (/chat-jump есть в свежих версиях)
+    if (!el) {
+        const c = ctx();
+        const hasJump = Boolean(c.SlashCommandParser?.commands?.['chat-jump']);
+        if (hasJump && typeof c.executeSlashCommandsWithOptions === 'function') {
+            try {
+                await c.executeSlashCommandsWithOptions(`/chat-jump ${index}`, { handleExecutionErrors: true });
+                await wait(400);
+                el = document.querySelector(selector);
+            } catch (error) {
+                console.warn('[Memento] /chat-jump не сработал:', error);
+            }
+        }
+    }
+    if (!el) {
+        toastr.info(`Сообщение #${index} ещё не подгружено — пролистай чат выше и нажми «К моменту» ещё раз`, TOAST_TITLE, { timeOut: 5000 });
+        return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('mmt-flash');
+    setTimeout(() => el.classList.remove('mmt-flash'), 1800);
+
+    const message = ctx().chat?.[index];
+    if (message && String(message.send_date) !== String(card.sendDate)) {
+        toastr.info('Момент из другого свайпа этого сообщения', TOAST_TITLE, { timeOut: 3500 });
     }
 }
 
@@ -539,7 +703,7 @@ async function deleteCard(cardId) {
     album.cards = album.cards.filter((c) => c.id !== cardId);
     await saveAlbum();
     if (deletable) await deleteImageFile(card.image);
-    closePeek();
+    closeCardView();
     render();
 }
 
@@ -569,7 +733,7 @@ function onChatChanged() {
 
     pageCursor = 0;
     view = 'album';
-    closePeek();
+    closeCardView();
     resetCapture();
     addMessageButtons();
     if (reconcileAlbum()) saveAlbumDebounced();
@@ -589,6 +753,4 @@ jQuery(async () => {
     for (const key of ['MORE_MESSAGES_LOADED', 'CHARACTER_MESSAGE_RENDERED', 'USER_MESSAGE_RENDERED']) {
         if (event_types[key]) eventSource.on(event_types[key], addMessageButtons);
     }
-    // Повернула телефон или сузила окно — пересобрать разворот
-    NARROW.addEventListener?.('change', () => { if (isOpen()) render(); });
 });
