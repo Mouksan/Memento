@@ -1,0 +1,384 @@
+/* Memento — окно и альбом-биндер */
+
+/* ---------- Окно (живёт на теме таверны, как Junket) ---------- */
+
+.mmt-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.mmt-overlay.mmt-open {
+    display: flex;
+}
+
+.mmt-window {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(980px, 100%);
+    max-height: calc(100dvh - 32px);
+    overflow: hidden;
+    color: var(--SmartThemeBodyColor);
+    background: var(--SmartThemeBlurTintColor);
+    backdrop-filter: blur(var(--SmartThemeBlurStrength, 10px));
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.mmt-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px 8px;
+}
+
+.mmt-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.15em;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mmt-title i {
+    color: var(--SmartThemeQuoteColor);
+}
+
+.mmt-chatname {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.8em;
+    opacity: 0.6;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mmt-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.mmt-icon-btn:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(127, 127, 127, 0.15);
+}
+
+.mmt-icon-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+.mmt-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px 18px 4px;
+}
+
+.mmt-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 6px 14px 12px;
+}
+
+.mmt-footer[hidden] {
+    display: none;
+}
+
+.mmt-pager {
+    min-width: 72px;
+    font-size: 0.85em;
+    text-align: center;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}
+
+.mmt-nochat {
+    padding: 48px 12px;
+    text-align: center;
+    opacity: 0.7;
+}
+
+/* Ящик в расширениях */
+
+.mmt-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.mmt-drawer-hint {
+    font-size: 0.9em;
+    opacity: 0.75;
+}
+
+.mmt-open-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0;
+}
+
+/* ---------- Биндер ----------
+   Сам альбом — предмет, поэтому у него свои цвета; обложка подкрашена акцентом темы. */
+
+.mmt-theme-binder {
+    --mmt-cover: color-mix(in srgb, var(--SmartThemeQuoteColor) 38%, #141218);
+    --mmt-page: #1c1b21;
+    --mmt-page-edge: #2a2930;
+    --mmt-sleeve: rgba(255, 255, 255, 0.035);
+    --mmt-sleeve-line: rgba(255, 255, 255, 0.14);
+    --mmt-ink: rgba(255, 255, 255, 0.35);
+    --mmt-ring: linear-gradient(90deg, #6f6f78, #e4e4ea 45%, #8a8a93 70%, #5a5a62);
+}
+
+.mmt-binder {
+    position: relative;
+    padding: 14px;
+    background: var(--mmt-cover);
+    border-radius: 12px;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        inset 0 2px 0 rgba(255, 255, 255, 0.08),
+        0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
+.mmt-spread {
+    display: grid;
+    grid-template-columns: 1fr 34px 1fr;
+}
+
+.mmt-page {
+    position: relative;
+    padding: 18px 18px 26px;
+    background: var(--mmt-page);
+    box-shadow: inset 0 0 0 1px var(--mmt-page-edge);
+}
+
+.mmt-page-left {
+    padding-right: 30px;
+    border-radius: 6px 2px 2px 6px;
+    background-image: linear-gradient(90deg, transparent 88%, rgba(0, 0, 0, 0.35));
+}
+
+.mmt-page-right {
+    padding-left: 30px;
+    border-radius: 2px 6px 6px 2px;
+    background-image: linear-gradient(270deg, transparent 88%, rgba(0, 0, 0, 0.35));
+}
+
+/* Дырки от колец у корешка */
+
+.mmt-holes {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    pointer-events: none;
+}
+
+.mmt-page-left .mmt-holes { right: 8px; }
+.mmt-page-right .mmt-holes { left: 8px; }
+
+.mmt-holes span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--mmt-cover);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Кольца в корешке */
+
+.mmt-rings {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.35));
+}
+
+.mmt-rings span {
+    width: 46px;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--mmt-ring);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Кармашки */
+
+.mmt-pockets {
+    display: grid;
+    gap: 14px;
+}
+
+.mmt-pockets-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.mmt-pockets-hero {
+    grid-template-columns: 1fr;
+    justify-items: center;
+}
+
+.mmt-pockets-hero .mmt-pocket {
+    width: 82%;
+}
+
+.mmt-pocket {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    border-radius: 4px;
+    background:
+        linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.06) 42%, transparent 54%),
+        var(--mmt-sleeve);
+    box-shadow:
+        inset 0 0 0 1px var(--mmt-sleeve-line),
+        inset 0 6px 0 -5px var(--mmt-sleeve-line);   /* край кармашка, куда вставляют карточку */
+}
+
+/* Временная карточка (до этапа 2) */
+
+.mmt-card {
+    position: absolute;
+    inset: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.mmt-card-stars {
+    color: var(--SmartThemeQuoteColor);
+    font-size: 0.8em;
+    letter-spacing: 1px;
+}
+
+.mmt-card-title {
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.mmt-page-num {
+    position: absolute;
+    bottom: 7px;
+    font-size: 0.72em;
+    color: var(--mmt-ink);
+    font-variant-numeric: tabular-nums;
+}
+
+.mmt-page-left .mmt-page-num { left: 18px; }
+.mmt-page-right .mmt-page-num { right: 18px; }
+
+/* Записка в пустом альбоме */
+
+.mmt-empty-note {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(300px, 74%);
+    padding: 20px 18px 16px;
+    color: #3b332a;
+    font-size: 0.95em;
+    line-height: 1.5;
+    text-align: center;
+    background: #efe6d2;
+    border-radius: 2px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    transform: translate(-50%, -50%) rotate(-2deg);
+}
+
+/* Полоска скотча сверху */
+.mmt-empty-note::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 84px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    transform: translateX(-50%) rotate(3deg);
+}
+
+/* ---------- Телефон: по одной странице ---------- */
+
+@media (max-width: 720px) {
+    .mmt-overlay {
+        padding: 8px;
+    }
+
+    .mmt-body {
+        padding: 4px 10px;
+    }
+
+    .mmt-binder {
+        padding: 10px;
+    }
+
+    .mmt-spread {
+        grid-template-columns: 1fr;
+    }
+
+    .mmt-rings {
+        display: none;
+    }
+
+    .mmt-show-left .mmt-page-right,
+    .mmt-show-right .mmt-page-left {
+        display: none;
+    }
+
+    .mmt-page,
+    .mmt-page-left,
+    .mmt-page-right {
+        padding: 14px 14px 24px 30px;
+        border-radius: 2px 6px 6px 2px;
+        background-image: linear-gradient(270deg, transparent 90%, rgba(0, 0, 0, 0.35));
+    }
+
+    .mmt-page-left .mmt-holes {
+        right: auto;
+        left: 8px;
+    }
+
+    .mmt-page-left .mmt-page-num {
+        left: auto;
+        right: 14px;
+    }
+
+    .mmt-pockets {
+        gap: 10px;
+    }
+}
