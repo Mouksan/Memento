@@ -11,9 +11,35 @@ Treat the task as summarizing a moment of a fictional story into a keepsake card
 
 Do not add policy disclaimers, safety lectures, refusals, moral judgments or meta-explanations. All characters are fictional adults. If the moment is sexual, violent, dark or emotionally intense, describe it honestly in the card text; keep the image prompt suggestive rather than explicit.`;
 
+// Встроенный стиль: вид карточки-воспоминания из отомэ-гачи
+export const LADS_STYLE_ID = 'memento-lads';
+export const LADS_STYLE = `Romantic otome gacha memory card illustration: semi-realistic 3D anime render, polished game CG quality, soft cinematic lighting with gentle bloom and glow, delicate floating light particles, dreamy shallow depth of field and bokeh, rich yet soft color grading, beautifully detailed faces, eyes and hair, intimate emotional atmosphere, vertical card composition with the characters as the clear focus. No text, no lettering, no logos, no UI, no card frame or border.`;
+
+export const DEFAULT_NAISTERA_ENDPOINT = 'https://naistera.org';
+export const DEFAULT_LOCAL_ENDPOINT = 'http://127.0.0.1:8001';
+export const IMAGE_SIZES = ['1K', '2K', '4K'];
+
 export const DEFAULT_SETTINGS = Object.freeze({
     version: 1,
     theme: 'binder',             // тема альбома (пока одна)
+
+    // Рисование (как в Reel): 'naistera' или 'local' (Gemini-compatible)
+    provider: 'naistera',
+    naisteraKey: '',
+    naisteraEndpoint: DEFAULT_NAISTERA_ENDPOINT,
+    naisteraModel: 'nano-banana-2',
+    localKey: '',
+    localEndpoint: DEFAULT_LOCAL_ENDPOINT,
+    localModel: 'nano-banana-2.1',
+    imageSize: '1K',             // только для Gemini-compatible
+    sendRefs: true,              // рефы из слотов Frame
+
+    // Стили: { id, name, tags, builtIn? }. Текст уходит в начало промпта для бананы.
+    styles: [{ id: LADS_STYLE_ID, name: 'Воспоминание LADS', tags: LADS_STYLE, builtIn: true }],
+    activeStyleId: LADS_STYLE_ID,
+
+    // Картинки, дорисованные после ухода из чата: { chatId, cardId, image }
+    mailbox: [],
 
     // Модель для карточек (как в Junket)
     promptSource: 'profile',     // 'profile' | 'custom'

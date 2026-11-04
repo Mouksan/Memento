@@ -1,11 +1,13 @@
 // Memento — альбом воспоминаний: моменты чата становятся коллекционными карточками
 // Этап 1: фундамент — регистрация, альбом у каждого чата свой, сверка веток, пустой биндер
 // Этап 2: захват момента (выделение, меню сообщения, сцена) и текст карточки от модели
+// Этап 3: картинка — банана через Naistera или Gemini-compatible, рефы из Frame, «Перерисовать»
 
 import {
-    ctx, getSettings, escapeHtml, makeId, currentChatId, getAlbum, saveAlbum, saveAlbumDebounced,
+    ctx, getSettings, saveSettings, escapeHtml, makeId, currentChatId, getAlbum, saveAlbum, saveAlbumDebounced,
     reconcileAlbum, memoriesWord, confirmPopup, findCardMessage, TOAST_TITLE,
 } from './store.js';
+import { drawImage, deleteImageFile, getMissingDrawSetting } from './image.js';
 import { layoutPages, spreadHtml, pageIndexOf, starsText, rarityOf } from './album.js';
 import { addSettingsDrawer, ICON } from './settings.js';
 import { initCapture, resetCapture, addMessageButtons } from './capture.js';
@@ -336,6 +338,7 @@ async function develop(moment) {
             if (index >= 0) pageCursor = index;
             render();
         }
+        drawCard(card.id);
     } catch (error) {
         if (controller.signal.aborted || error?.name === 'AbortError') {
             if (!controller.quiet) toastr.info('Проявка остановлена', TOAST_TITLE);
@@ -349,6 +352,131 @@ async function develop(moment) {
     }
 }
 
+// ---------- Картинка ----------
+
+// Рисование не обрывается при смене чата: файл сохраняется, а ссылка ждёт в почтовом ящике (как в Reel)
+const drawJobs = new Map();   // cardId → { controller, chatId }
+
+function findCard(cardId) {
+    return getAlbum()?.cards.find((c) => c.id === cardId) || null;
+}
+
+/** Файл карточки можно удалять, только если он родился в этом чате и больше ни у кого его нет. */
+function canDeleteFile(card, path) {
+    if (!path || card.imageChat !== currentChatId()) return false;
+    return !getAlbum().cards.some((c) => c !== card && c.image === path);
+}
+
+function refreshViews(cardId) {
+    if (!isOpen()) return;
+    if (view === 'album') render();
+    if (peekId === cardId) openPeek(cardId);
+}
+
+async function applyImage(card, image) {
+    const oldPath = card.image;
+    const oldDeletable = canDeleteFile(card, oldPath);
+    card.image = image.path;
+    card.imageChat = currentChatId();
+    card.imageMeta = { provider: image.provider, model: image.model, refs: image.refs, style: image.style, createdAt: image.createdAt };
+    card.drawStatus = null;
+    card.drawError = null;
+    await saveAlbum();
+    if (oldDeletable && oldPath !== image.path) await deleteImageFile(oldPath);
+}
+
+async function drawCard(cardId) {
+    const card = findCard(cardId);
+    if (!card || drawJobs.has(cardId)) return;
+    const missing = getMissingDrawSetting();
+    if (missing) {
+        toastr.warning(`Карточка без картинки — ${missing}. Загляни в настройки, «Рисование»`, TOAST_TITLE, { timeOut: 6000 });
+        return;
+    }
+
+    const chatId = currentChatId();
+    const controller = new AbortController();
+    drawJobs.set(cardId, { controller, chatId });
+    card.drawStatus = 'drawing';
+    card.drawError = null;
+    await saveAlbum();
+    refreshViews(cardId);
+    const title = card.title;
+
+    let image = null;
+    let failure = null;
+    try {
+        image = await drawImage(card.prompt, controller.signal);
+    } catch (error) {
+        failure = error;
+    }
+    drawJobs.delete(cardId);
+    if (controller.signal.aborted) {
+        // Карточку удалили, пока рисовалась — файл ей больше не нужен
+        if (image?.path) await deleteImageFile(image.path);
+        return;
+    }
+
+    if (currentChatId() !== chatId) {
+        if (image) {
+            getSettings().mailbox.push({ chatId, cardId, image });
+            saveSettings();
+            toastr.info(`Картинка для «${title}» готова — появится, когда вернёшься в тот чат`, TOAST_TITLE, { timeOut: 4000 });
+        } else {
+            toastr.error(`Банана не нарисовала «${title}» (${String(failure?.message || failure).slice(0, 200)})`, TOAST_TITLE, { timeOut: 8000 });
+        }
+        return;
+    }
+
+    const live = findCard(cardId);
+    if (!live) {
+        if (image?.path) await deleteImageFile(image.path);
+        return;
+    }
+    if (image) {
+        await applyImage(live, image);
+        toastr.success(`Картинка для «${title}» готова`, TOAST_TITLE, { timeOut: 2500 });
+    } else {
+        const text = String(failure?.message || failure);
+        console.warn('[Memento] рисование упало:', failure);
+        live.drawStatus = 'error';
+        live.drawError = text;
+        await saveAlbum();
+        toastr.error(`Банана не нарисовала «${title}» (${text.slice(0, 200)}). Карточка в альбоме — жми «Перерисовать»`, TOAST_TITLE, { timeOut: 8000 });
+    }
+    refreshViews(cardId);
+}
+
+/** Дорисованное, пока ты была в другом чате, — на место. И сброс зависших «рисуется» после перезагрузки. */
+async function deliverMailbox() {
+    const album = getAlbum();
+    if (!album) return;
+    const chatId = currentChatId();
+    let changed = false;
+
+    for (const card of album.cards) {
+        if (card.drawStatus === 'drawing' && !drawJobs.has(card.id)) {
+            card.drawStatus = 'error';
+            card.drawError = 'Рисование прервалось (таверну перезагрузили?)';
+            changed = true;
+        }
+    }
+
+    const s = getSettings();
+    const mine = s.mailbox.filter((m) => m.chatId === chatId);
+    if (mine.length) {
+        s.mailbox = s.mailbox.filter((m) => m.chatId !== chatId);
+        saveSettings();
+        for (const item of mine) {
+            const card = album.cards.find((c) => c.id === item.cardId);
+            if (card) await applyImage(card, item.image);
+            else await deleteImageFile(item.image?.path);
+        }
+        changed = false;   // applyImage уже сохранил
+    }
+    if (changed) saveAlbumDebounced();
+}
+
 // ---------- Временный просмотр карточки (большой вид с оборотом — этап 4) ----------
 
 function openPeek(cardId) {
@@ -357,9 +485,15 @@ function openPeek(cardId) {
     if (!card || !overlayEl) return;
     peekId = cardId;
     const where = findCardMessage(card);
+    const drawing = card.drawStatus === 'drawing';
     const box = overlayEl.querySelector('.mmt-peek');
+    let art = '';
+    if (card.image) art = `<img class="mmt-peek-img" src="${escapeHtml(card.image)}" alt="">`;
+    if (drawing) art = `<div class="mmt-peek-wait"><i class="fa-solid fa-spinner fa-spin"></i> Рисуется…</div>`;
+    else if (card.drawStatus === 'error') art += `<div class="mmt-peek-error">${escapeHtml(card.drawError || 'Картинка не нарисовалась')}</div>`;
     box.innerHTML = `
         <div class="mmt-peek-card mmt-r${rarityOf(card)}">
+            ${art}
             <div class="mmt-peek-stars">${starsText(card)}</div>
             <div class="mmt-peek-title">${escapeHtml(card.title)}</div>
             <blockquote class="mmt-peek-quote">${escapeHtml(card.quote)}</blockquote>
@@ -367,11 +501,13 @@ function openPeek(cardId) {
             <div class="mmt-peek-meta">${where >= 0 ? `#${where}` : 'сообщения больше нет'}${card.speaker ? ` · ${escapeHtml(card.speaker)}` : ''}</div>
             <div class="mmt-peek-actions">
                 <button class="mmt-btn mmt-peek-delete" type="button"><i class="fa-solid fa-trash-can"></i> Удалить</button>
+                <button class="mmt-btn mmt-peek-redraw" type="button" ${drawing ? 'disabled' : ''}><i class="fa-solid fa-rotate"></i> Перерисовать</button>
                 <button class="mmt-btn mmt-peek-close" type="button">Закрыть</button>
             </div>
         </div>`;
     box.hidden = false;
     box.querySelector('.mmt-peek-close').addEventListener('click', closePeek);
+    box.querySelector('.mmt-peek-redraw').addEventListener('click', () => drawCard(cardId));
     box.querySelector('.mmt-peek-delete').addEventListener('click', () => deleteCard(cardId));
     box.onmousedown = (e) => { if (e.target === box) closePeek(); };
 }
@@ -389,12 +525,20 @@ async function deleteCard(cardId) {
     const album = getAlbum();
     const card = album?.cards.find((c) => c.id === cardId);
     if (!card) return;
-    const text = card.image
+    // В ветке картинка принадлежит родительскому чату — её не трогаем
+    const deletable = canDeleteFile(card, card.image);
+    const text = deletable
         ? 'Удалить это воспоминание из альбома? Картинка тоже удалится.'
         : 'Удалить это воспоминание из альбома?';
     if (!(await confirmPopup(text))) return;
+    const job = drawJobs.get(cardId);
+    if (job) {
+        job.controller.abort();
+        drawJobs.delete(cardId);
+    }
     album.cards = album.cards.filter((c) => c.id !== cardId);
     await saveAlbum();
+    if (deletable) await deleteImageFile(card.image);
     closePeek();
     render();
 }
@@ -429,6 +573,7 @@ function onChatChanged() {
     resetCapture();
     addMessageButtons();
     if (reconcileAlbum()) saveAlbumDebounced();
+    deliverMailbox().finally(() => { if (isOpen()) render(); });
     if (isOpen()) render();
 }
 

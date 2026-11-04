@@ -314,6 +314,25 @@
     background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--mmt-rar) 22%, #16151b), #121116 70%);
 }
 
+.mmt-card-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 0.75em;
+    color: #f3f0ea;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+}
+
+.mmt-card-failed {
+    color: #e0a23c;
+}
+
 .mmt-card-caption {
     position: absolute;
     right: 0;
@@ -678,6 +697,95 @@
     background: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--mmt-rar);
     border-radius: 12px;
+}
+
+.mmt-peek-img {
+    display: block;
+    width: min(260px, 70%);
+    aspect-ratio: 3 / 4;
+    margin: 0 auto 4px;
+    object-fit: cover;
+    border: 2px solid var(--mmt-rar);
+    border-radius: 6px;
+}
+
+.mmt-peek-wait {
+    padding: 28px 0;
+    text-align: center;
+    opacity: 0.7;
+}
+
+.mmt-peek-error {
+    padding: 8px 10px;
+    font-size: 0.85em;
+    color: #e0a23c;
+    word-break: break-word;
+    background: rgba(224, 162, 60, 0.1);
+    border-radius: 6px;
+}
+
+.mmt-peek-actions .mmt-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* Ящик: рисование и стили */
+
+.mmt-model-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mmt-model-row select {
+    flex: 1;
+    margin: 0;
+}
+
+.mmt-check {
+    margin-top: 8px;
+}
+
+.mmt-styles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.mmt-style-item {
+    padding: 6px 8px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+}
+
+.mmt-style-item summary {
+    cursor: pointer;
+}
+
+.mmt-style-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.mmt-style-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mmt-style-top input {
+    flex: 1;
+    margin: 0;
+}
+
+.mmt-style-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
 }
 
 .mmt-peek-stars {

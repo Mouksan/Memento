@@ -1,6 +1,7 @@
 // Memento — что уходит модели и как разбирается ответ.
 
 import { ctx, substitute } from './store.js';
+import { getFrameNames } from './image.js';
 
 const CONTEXT_BEFORE = 2;   // сколько сообщений перед выделенным моментом даём для контекста
 
@@ -78,7 +79,7 @@ Judge honestly; most moments are 3 or 4. Use the album statistics below to keep 
 
 NOTE — written by {{char}} in first person, in their own voice and manner of speech, to {{user}}, as if signing the back of a photo. 1 to 3 sentences, personal, about this exact moment. No signature line.
 
-PROMPT — one vertical 3:4 illustration of the moment for an image model: who is there (use the character names), their poses and expressions, the setting, lighting and mood. Concrete and visual, 60-120 words, no text or lettering in the image. Keep it suggestive, never explicit.`;
+PROMPT — one vertical 3:4 illustration of the moment for an image model: who is there (use the character names; if IMAGE NAMES are given, use exactly those spellings), their poses and expressions, the setting, lighting and mood. Concrete and visual, 60-120 words, in English, no text or lettering in the image. The art style is added separately — do not describe a medium or rendering style. Keep it suggestive, never explicit.`;
 
 const QUOTE_RULE = `The user already chose the moment: it is given as CHOSEN QUOTE. Return it unchanged in "quote", and the number of the message it comes from in "mes". The earlier messages are context only.`;
 
@@ -111,6 +112,9 @@ export function buildMomentPrompt(moment, cards) {
     parts.push(`# ${moment.mode === 'quote' ? 'Messages' : 'Scene'}\n${sceneText}`);
     if (moment.mode === 'quote') parts.push(`# CHOSEN QUOTE (from #${moment.mesId})\n${moment.quote}`);
     parts.push(`# Album\n${albumStats(cards)}`);
+    // Имена как в слотах Frame — по ним к картинке цепляются рефы (как в Storyboard)
+    const names = getFrameNames();
+    if (names.length) parts.push(`# IMAGE NAMES\n${names.join(', ')}`);
 
     const instruction = `${INSTRUCTION}\n\n${moment.mode === 'quote' ? QUOTE_RULE : SCENE_RULE}`;
     return {

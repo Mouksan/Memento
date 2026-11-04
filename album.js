@@ -58,9 +58,13 @@ function cardHtml(card) {
     const art = card.image
         ? `<img class="mmt-card-img" src="${escapeHtml(card.image)}" alt="" loading="lazy">`
         : `<div class="mmt-card-blank"><i class="fa-solid fa-camera-retro"></i></div>`;
+    let badge = '';
+    if (card.drawStatus === 'drawing') badge = '<span class="mmt-card-badge mmt-card-drawing" title="Рисуется"><i class="fa-solid fa-spinner fa-spin"></i></span>';
+    else if (card.drawStatus === 'error') badge = '<span class="mmt-card-badge mmt-card-failed" title="Картинка не нарисовалась"><i class="fa-solid fa-triangle-exclamation"></i></span>';
     return `
         <button type="button" class="mmt-card mmt-r${rarity}" data-card="${escapeHtml(card.id)}" title="${escapeHtml(card.title || '')}">
             ${art}
+            ${badge}
             <span class="mmt-card-caption">
                 <span class="mmt-card-stars">${starsText(card)}</span>
                 <span class="mmt-card-title">${escapeHtml(card.title || '')}</span>
