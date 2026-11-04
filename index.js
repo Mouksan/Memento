@@ -1,19 +1,25 @@
 // Memento — альбом воспоминаний: моменты чата становятся коллекционными карточками
 // Этап 1: фундамент — регистрация, альбом у каждого чата свой, сверка веток, пустой биндер
+// Этап 2: захват момента (выделение, меню сообщения, сцена) и текст карточки от модели
 
 import {
-    ctx, getSettings, escapeHtml, currentChatId, getAlbum, saveAlbumDebounced,
-    reconcileAlbum, memoriesWord,
+    ctx, getSettings, escapeHtml, makeId, currentChatId, getAlbum, saveAlbum, saveAlbumDebounced,
+    reconcileAlbum, memoriesWord, confirmPopup, findCardMessage, TOAST_TITLE,
 } from './store.js';
-import { layoutPages, spreadHtml } from './album.js';
+import { layoutPages, spreadHtml, pageIndexOf, starsText, rarityOf } from './album.js';
+import { addSettingsDrawer, ICON } from './settings.js';
+import { initCapture, resetCapture, addMessageButtons } from './capture.js';
+import { buildMomentPrompt, extractJson, cardFromAnswer, cleanMessageText } from './prompt.js';
+import { requestModel } from './connection.js';
 
-const ICON = 'fa-book-bookmark';
 const NARROW = window.matchMedia('(max-width: 720px)');   // на телефоне — по одной странице
 
 // ---------- Окно ----------
 
 let overlayEl = null;
-let pageCursor = 0;   // номер текущей страницы (на широком экране показываем её разворот)
+let pageCursor = 0;      // номер текущей страницы (на широком экране показываем её разворот)
+let view = 'album';      // 'album' | 'scene'
+let peekId = null;       // открытая карточка
 
 function buildWindow() {
     const overlay = document.createElement('div');
@@ -24,6 +30,7 @@ function buildWindow() {
             <div class="mmt-header">
                 <div class="mmt-title"><i class="fa-solid ${ICON}"></i><span>「 MEMENTO 」</span></div>
                 <div class="mmt-chatname"></div>
+                <button class="mmt-icon-btn mmt-scene-btn" type="button" title="Выбрать сцену"><i class="fa-solid fa-film"></i></button>
                 <button class="mmt-icon-btn mmt-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="mmt-body"></div>
@@ -32,11 +39,18 @@ function buildWindow() {
                 <div class="mmt-pager"></div>
                 <button class="mmt-icon-btn mmt-next" type="button" title="Вперёд"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
+            <div class="mmt-peek" hidden></div>
         </div>`;
 
     overlay.querySelector('.mmt-close').addEventListener('click', closeWindow);
     overlay.querySelector('.mmt-prev').addEventListener('click', () => turn(-1));
     overlay.querySelector('.mmt-next').addEventListener('click', () => turn(1));
+    overlay.querySelector('.mmt-scene-btn').addEventListener('click', () => setView(view === 'scene' ? 'album' : 'scene'));
+
+    overlay.querySelector('.mmt-body').addEventListener('click', (e) => {
+        const card = e.target.closest('.mmt-card[data-card]');
+        if (card) openPeek(card.dataset.card);
+    });
 
     // Клик мимо окна закрывает его (mousedown — чтобы выделение текста не закрывало случайно)
     overlay.addEventListener('mousedown', (e) => {
@@ -54,23 +68,37 @@ function isOpen() {
 function onKeyDown(e) {
     if (!isOpen()) return;
     if (document.querySelector('dialog[open]')) return;   // попап таверны поверх — пусть он сам
-    if (e.target instanceof Element && e.target.closest('input, textarea, [contenteditable="true"]')) return;
-    if (e.key === 'Escape') closeWindow();
-    else if (e.key === 'ArrowLeft') turn(-1);
+    if (e.key === 'Escape') {
+        if (peekId) closePeek();
+        else if (view === 'scene') setView('album');
+        else closeWindow();
+        return;
+    }
+    if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (view !== 'album' || peekId) return;
+    if (e.key === 'ArrowLeft') turn(-1);
     else if (e.key === 'ArrowRight') turn(1);
 }
 
-function openWindow() {
+function openWindow(nextView = 'album') {
     if (!overlayEl) overlayEl = buildWindow();
     overlayEl.classList.add('mmt-open');
     document.addEventListener('keydown', onKeyDown);
+    view = nextView;
     render();
 }
 
 function closeWindow() {
     if (!overlayEl) return;
+    closePeek();
     overlayEl.classList.remove('mmt-open');
     document.removeEventListener('keydown', onKeyDown);
+}
+
+function setView(next) {
+    view = next;
+    closePeek();
+    render();
 }
 
 // ---------- Листание ----------
@@ -81,7 +109,7 @@ function step() {
 
 function turn(direction) {
     const album = getAlbum();
-    if (!album) return;
+    if (!album || view !== 'album') return;
     const total = layoutPages(album.cards).length;
     const next = pageCursor + direction * step();
     if (next < 0 || next >= total) return;
@@ -96,7 +124,11 @@ function render() {
     const body = overlayEl.querySelector('.mmt-body');
     const footer = overlayEl.querySelector('.mmt-footer');
     const chatName = overlayEl.querySelector('.mmt-chatname');
+    const sceneBtn = overlayEl.querySelector('.mmt-scene-btn');
     const album = getAlbum();
+
+    sceneBtn.hidden = !album;
+    sceneBtn.classList.toggle('mmt-active', view === 'scene');
 
     if (!album) {
         chatName.textContent = '';
@@ -109,6 +141,12 @@ function render() {
     const chatId = currentChatId();
     chatName.textContent = `${chatId} · ${count} ${memoriesWord(count)}`;
     chatName.title = chatId;
+
+    if (view === 'scene') {
+        footer.hidden = true;
+        renderScenePane(body);
+        return;
+    }
 
     const pages = layoutPages(album.cards);
     pageCursor = Math.max(0, Math.min(pageCursor, pages.length - 1));
@@ -134,33 +172,234 @@ function render() {
         : (spread + 1) * 2 >= pages.length;
 }
 
-// ---------- Вход ----------
+// ---------- Выбор сцены (как в Junket) ----------
 
-function addSettingsDrawer() {
-    const host = document.getElementById('extensions_settings2') || document.getElementById('extensions_settings');
-    if (!host || document.getElementById('mmt-settings')) return;
+const QUICK_LAST = [5, 10];    // первое число — заодно выбор по умолчанию
+const PREVIEW_CHARS = 120;
+const rangeDrafts = new Map(); // черновик диапазона на чат (до перезагрузки страницы)
 
-    const wrap = document.createElement('div');
-    wrap.id = 'mmt-settings';
-    wrap.innerHTML = `
-        <div class="inline-drawer">
-            <div class="inline-drawer-toggle inline-drawer-header">
-                <b><i class="fa-solid ${ICON}" style="margin-right: 6px;"></i>「 MEMENTO 」</b>
-                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+function lastIndex() {
+    return (ctx().chat || []).length - 1;
+}
+
+function getDraft() {
+    const chatId = currentChatId();
+    if (!rangeDrafts.has(chatId)) {
+        const last = lastIndex();
+        rangeDrafts.set(chatId, last < 0 ? { from: '', to: '' } : { from: Math.max(0, last - QUICK_LAST[0] + 1), to: last });
+    }
+    return rangeDrafts.get(chatId);
+}
+
+function validateRange(draft) {
+    const last = lastIndex();
+    if (last < 0) return { ok: false, error: 'В этом чате пока нет сообщений.' };
+    const parse = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
+    const from = parse(draft.from);
+    const to = parse(draft.to);
+    if (from === null || to === null) return { ok: false, error: 'Укажи, с какого и по какое сообщение.' };
+    if (!Number.isInteger(from) || !Number.isInteger(to)) return { ok: false, error: 'Номера сообщений — целые числа.' };
+    if (from < 0 || to < 0 || from > last || to > last) return { ok: false, error: `В этом чате сообщения с 0 по ${last}.` };
+    if (from > to) return { ok: false, error: '«С» должно быть не больше, чем «По».' };
+    return { ok: true, from, to };
+}
+
+function previewRowHtml(index) {
+    const msg = (ctx().chat || [])[index];
+    if (!msg) return '';
+    const text = cleanMessageText(msg.mes).replace(/[*_~`]+/g, '').replace(/\s+/g, ' ');
+    const short = text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS).trimEnd()}…` : (text || '(пусто)');
+    return `
+        <div class="mmt-preview-row">
+            <span class="mmt-preview-id">#${index}</span>
+            <span class="mmt-preview-name">${escapeHtml(msg.name || '???')}</span>
+            <span class="mmt-preview-text">${escapeHtml(short)}</span>
+        </div>`;
+}
+
+function renderScenePane(body) {
+    const draft = getDraft();
+    body.innerHTML = `
+        <div class="mmt-scene">
+            <div class="mmt-scene-title">Выбрать сцену</div>
+            <div class="mmt-scene-hint">Модель сама найдёт в ней самый запоминающийся момент.</div>
+            <div class="mmt-range-row">
+                <label class="mmt-range-field"><span>С</span>
+                    <input class="mmt-range-from text_pole" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(draft.from)}">
+                </label>
+                <label class="mmt-range-field"><span>По</span>
+                    <input class="mmt-range-to text_pole" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(draft.to)}">
+                </label>
             </div>
-            <div class="inline-drawer-content">
-                <div class="mmt-drawer">
-                    <div class="mmt-drawer-hint">Альбом воспоминаний: любимые моменты чата превращаются в коллекционные карточки.</div>
-                    <button class="menu_button mmt-open-btn" type="button">
-                        <i class="fa-solid ${ICON}"></i>
-                        <span>Открыть альбом</span>
-                    </button>
-                </div>
+            <div class="mmt-chips">
+                ${QUICK_LAST.map((n) => `<button class="mmt-chip" type="button" data-last="${n}">Последние ${n}</button>`).join('')}
+            </div>
+            <div class="mmt-range-summary"></div>
+            <div class="mmt-preview"></div>
+            <div class="mmt-scene-actions">
+                <button class="mmt-btn mmt-scene-back" type="button"><i class="fa-solid fa-arrow-left"></i> К альбому</button>
+                <button class="menu_button mmt-go" type="button"><i class="fa-solid fa-camera-retro"></i> В альбом</button>
             </div>
         </div>`;
-    host.appendChild(wrap);
-    wrap.querySelector('.mmt-open-btn').addEventListener('click', openWindow);
+
+    const fromInput = body.querySelector('.mmt-range-from');
+    const toInput = body.querySelector('.mmt-range-to');
+    const refresh = () => {
+        const result = validateRange(getDraft());
+        const summary = body.querySelector('.mmt-range-summary');
+        const box = body.querySelector('.mmt-preview');
+        body.querySelector('.mmt-go').disabled = !result.ok;
+        if (!result.ok) {
+            summary.innerHTML = `<span class="mmt-error">${escapeHtml(result.error)}</span>`;
+            box.innerHTML = '';
+            return;
+        }
+        const count = result.to - result.from + 1;
+        summary.textContent = `Выбрано сообщений: ${count}`;
+        let rows = previewRowHtml(result.from);
+        if (count > 2) rows += `<div class="mmt-preview-gap">… ещё ${count - 2} сообщ. между ними …</div>`;
+        if (count > 1) rows += previewRowHtml(result.to);
+        box.innerHTML = rows;
+    };
+    let typing = null;
+    const onType = () => {
+        rangeDrafts.set(currentChatId(), { from: fromInput.value, to: toInput.value });
+        clearTimeout(typing);
+        typing = setTimeout(refresh, 250);
+    };
+    fromInput.addEventListener('input', onType);
+    toInput.addEventListener('input', onType);
+    body.querySelectorAll('[data-last]').forEach((btn) => btn.addEventListener('click', () => {
+        const last = lastIndex();
+        if (last < 0) return;
+        const from = Math.max(0, last - Number(btn.dataset.last) + 1);
+        rangeDrafts.set(currentChatId(), { from, to: last });
+        fromInput.value = from;
+        toInput.value = last;
+        refresh();
+    }));
+    body.querySelector('.mmt-scene-back').addEventListener('click', () => setView('album'));
+    body.querySelector('.mmt-go').addEventListener('click', () => {
+        const result = validateRange(getDraft());
+        if (!result.ok) return;
+        setView('album');
+        develop({ mode: 'scene', from: result.from, to: result.to });
+    });
+    refresh();
 }
+
+// ---------- Проявка: момент → карточка ----------
+
+const jobs = new Set();   // { controller, chatId, toast }
+
+async function develop(moment) {
+    const chatId = currentChatId();
+    if (!chatId || !getAlbum()) {
+        toastr.warning('Открой чат, чтобы сохранить воспоминание', TOAST_TITLE);
+        return;
+    }
+    const controller = new AbortController();
+    const toast = toastr.info('Проявляем воспоминание…', TOAST_TITLE, { timeOut: 0, extendedTimeOut: 0, tapToDismiss: false });
+    const job = { controller, chatId, toast };
+    jobs.add(job);
+
+    try {
+        const { instruction, contextText, from, to } = buildMomentPrompt(moment, getAlbum().cards);
+        const raw = await requestModel({ instruction, contextText }, controller.signal);
+        if (controller.signal.aborted || currentChatId() !== chatId) throw new DOMException('Aborted', 'AbortError');
+        if (!String(raw).trim()) throw new Error('Модель вернула пустой ответ — попробуй ещё раз или увеличь лимит токенов ответа.');
+
+        const fields = cardFromAnswer(extractJson(raw), moment, { from, to });
+        const message = (ctx().chat || [])[fields.mesId];
+        const card = {
+            id: makeId(),
+            title: fields.title,
+            rarity: fields.rarity,
+            quote: fields.quote,
+            note: fields.note,
+            prompt: fields.prompt,
+            image: '',
+            mesId: fields.mesId,
+            sendDate: message?.send_date ?? null,
+            swipeId: message?.swipe_id ?? 0,
+            speaker: message?.name || '',
+            calendarDate: null,
+            createdAt: Date.now(),
+        };
+        const album = getAlbum();
+        album.cards.push(card);
+        await saveAlbum();
+
+        toastr.success(`Воспоминание добавлено в альбом: «${card.title}» ${starsText(card)}`, TOAST_TITLE);
+        if (isOpen() && view === 'album') {
+            const index = pageIndexOf(layoutPages(album.cards), card.id);
+            if (index >= 0) pageCursor = index;
+            render();
+        }
+    } catch (error) {
+        if (controller.signal.aborted || error?.name === 'AbortError') {
+            if (!controller.quiet) toastr.info('Проявка остановлена', TOAST_TITLE);
+        } else {
+            console.error('[Memento]', error);
+            toastr.error(`Не удалось проявить: ${String(error?.message || error)}`, TOAST_TITLE);
+        }
+    } finally {
+        jobs.delete(job);
+        toastr.clear(toast);
+    }
+}
+
+// ---------- Временный просмотр карточки (большой вид с оборотом — этап 4) ----------
+
+function openPeek(cardId) {
+    const album = getAlbum();
+    const card = album?.cards.find((c) => c.id === cardId);
+    if (!card || !overlayEl) return;
+    peekId = cardId;
+    const where = findCardMessage(card);
+    const box = overlayEl.querySelector('.mmt-peek');
+    box.innerHTML = `
+        <div class="mmt-peek-card mmt-r${rarityOf(card)}">
+            <div class="mmt-peek-stars">${starsText(card)}</div>
+            <div class="mmt-peek-title">${escapeHtml(card.title)}</div>
+            <blockquote class="mmt-peek-quote">${escapeHtml(card.quote)}</blockquote>
+            ${card.note ? `<div class="mmt-peek-note">${escapeHtml(card.note)}</div>` : ''}
+            <div class="mmt-peek-meta">${where >= 0 ? `#${where}` : 'сообщения больше нет'}${card.speaker ? ` · ${escapeHtml(card.speaker)}` : ''}</div>
+            <div class="mmt-peek-actions">
+                <button class="mmt-btn mmt-peek-delete" type="button"><i class="fa-solid fa-trash-can"></i> Удалить</button>
+                <button class="mmt-btn mmt-peek-close" type="button">Закрыть</button>
+            </div>
+        </div>`;
+    box.hidden = false;
+    box.querySelector('.mmt-peek-close').addEventListener('click', closePeek);
+    box.querySelector('.mmt-peek-delete').addEventListener('click', () => deleteCard(cardId));
+    box.onmousedown = (e) => { if (e.target === box) closePeek(); };
+}
+
+function closePeek() {
+    peekId = null;
+    const box = overlayEl?.querySelector('.mmt-peek');
+    if (box) {
+        box.hidden = true;
+        box.innerHTML = '';
+    }
+}
+
+async function deleteCard(cardId) {
+    const album = getAlbum();
+    const card = album?.cards.find((c) => c.id === cardId);
+    if (!card) return;
+    const text = card.image
+        ? 'Удалить это воспоминание из альбома? Картинка тоже удалится.'
+        : 'Удалить это воспоминание из альбома?';
+    if (!(await confirmPopup(text))) return;
+    album.cards = album.cards.filter((c) => c.id !== cardId);
+    await saveAlbum();
+    closePeek();
+    render();
+}
+
+// ---------- Вход ----------
 
 function addWandButton() {
     const menu = document.getElementById('extensionsMenu');
@@ -171,23 +410,40 @@ function addWandButton() {
     item.className = 'list-group-item flex-container flexGap5 interactable';
     item.tabIndex = 0;
     item.innerHTML = `<div class="fa-solid ${ICON} extensionsMenuExtensionButton"></div><span>Memento</span>`;
-    item.addEventListener('click', openWindow);
+    item.addEventListener('click', () => openWindow());
     menu.appendChild(item);
 }
 
 function onChatChanged() {
+    // Карточка по старому чату больше не нужна — сохранить её некуда
+    for (const job of jobs) {
+        job.controller.quiet = true;
+        job.controller.abort();
+    }
+    if (jobs.size) toastr.info('Проявка остановлена: сменился чат', TOAST_TITLE);
+    jobs.clear();
+
     pageCursor = 0;
+    view = 'album';
+    closePeek();
+    resetCapture();
+    addMessageButtons();
     if (reconcileAlbum()) saveAlbumDebounced();
     if (isOpen()) render();
 }
 
 jQuery(async () => {
     getSettings();
-    addSettingsDrawer();
+    addSettingsDrawer(() => openWindow());
     addWandButton();
+    initCapture((moment) => develop(moment));
 
     const { eventSource, event_types } = ctx();
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
+    // Подгрузка старых сообщений и новые посты — кнопке в меню нужны и они
+    for (const key of ['MORE_MESSAGES_LOADED', 'CHARACTER_MESSAGE_RENDERED', 'USER_MESSAGE_RENDERED']) {
+        if (event_types[key]) eventSource.on(event_types[key], addMessageButtons);
+    }
     // Повернула телефон или сузила окно — пересобрать разворот
     NARROW.addEventListener?.('change', () => { if (isOpen()) render(); });
 });

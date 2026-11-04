@@ -39,14 +39,33 @@ export function layoutPages(cards) {
     return pages;
 }
 
-// Пока карточек нет (этап 2+), кармашек с карточкой — просто подпись
+export function rarityOf(card) {
+    return Math.max(3, Math.min(5, Number(card?.rarity) || 3));
+}
+
+export function starsText(card) {
+    return '★'.repeat(rarityOf(card));
+}
+
+/** Страница, на которой лежит карточка (для прыжка к новой). */
+export function pageIndexOf(pages, cardId) {
+    return pages.findIndex((p) => p.cards.some((c) => c.id === cardId));
+}
+
+// Карточка в кармашке. Картинки появятся на этапе 3 — пока вместо неё подложка цвета редкости.
 function cardHtml(card) {
-    const stars = '★'.repeat(Math.max(3, Math.min(5, Number(card.rarity) || 3)));
+    const rarity = rarityOf(card);
+    const art = card.image
+        ? `<img class="mmt-card-img" src="${escapeHtml(card.image)}" alt="" loading="lazy">`
+        : `<div class="mmt-card-blank"><i class="fa-solid fa-camera-retro"></i></div>`;
     return `
-        <div class="mmt-card" data-card="${escapeHtml(card.id)}" data-rarity="${escapeHtml(card.rarity)}">
-            <div class="mmt-card-stars">${stars}</div>
-            <div class="mmt-card-title">${escapeHtml(card.title || '')}</div>
-        </div>`;
+        <button type="button" class="mmt-card mmt-r${rarity}" data-card="${escapeHtml(card.id)}" title="${escapeHtml(card.title || '')}">
+            ${art}
+            <span class="mmt-card-caption">
+                <span class="mmt-card-stars">${starsText(card)}</span>
+                <span class="mmt-card-title">${escapeHtml(card.title || '')}</span>
+            </span>
+        </button>`;
 }
 
 function pocketHtml(card) {

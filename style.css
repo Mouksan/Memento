@@ -266,28 +266,76 @@
         inset 0 6px 0 -5px var(--mmt-sleeve-line);   /* край кармашка, куда вставляют карточку */
 }
 
-/* Временная карточка (до этапа 2) */
+/* Карточка в кармашке. Цвета редкости — свои, как у гачи: синий, фиолетовый, золото */
+
+.mmt-r3 { --mmt-rar: #7fa8d8; }
+.mmt-r4 { --mmt-rar: #b48ce0; }
+.mmt-r5 { --mmt-rar: #e8c46a; }
 
 .mmt-card {
     position: absolute;
     inset: 5px;
+    display: block;
+    width: auto;
+    padding: 0;
+    overflow: hidden;
+    color: #f3f0ea;
+    font: inherit;
+    text-align: left;
+    background: #121116;
+    border: 2px solid var(--mmt-rar);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.mmt-card:hover,
+.mmt-card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--mmt-rar);
+    outline: none;
+}
+
+.mmt-card-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mmt-card-blank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1.8em;
+    color: color-mix(in srgb, var(--mmt-rar) 55%, transparent);
+    background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--mmt-rar) 22%, #16151b), #121116 70%);
+}
+
+.mmt-card-caption {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    padding: 8px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.08);
+    gap: 2px;
+    padding: 18px 8px 7px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.78) 45%);
 }
 
 .mmt-card-stars {
-    color: var(--SmartThemeQuoteColor);
-    font-size: 0.8em;
+    color: var(--mmt-rar);
+    font-size: 0.75em;
     letter-spacing: 1px;
 }
 
 .mmt-card-title {
-    font-size: 0.85em;
+    font-size: 0.82em;
     font-weight: 600;
+    line-height: 1.25;
 }
 
 .mmt-page-num {
@@ -330,6 +378,340 @@
     background: rgba(255, 255, 255, 0.45);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     transform: translateX(-50%) rotate(3deg);
+}
+
+/* ---------- Кнопка 📸 при выделении ---------- */
+
+/* В панельке ST-Quotes: её переменные наследуются, выглядим как её карандаш */
+.mmt-stq-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    color: var(--stq-fg, inherit);
+    font-size: 0.8rem;
+    background: var(--stq-surface, rgba(127, 127, 127, 0.2));
+    border: 1px solid var(--stq-border, rgba(255, 255, 255, 0.2));
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.12s ease;
+}
+
+.mmt-stq-btn:hover {
+    background: var(--stq-surface-hi, rgba(127, 127, 127, 0.3));
+    transform: scale(1.1);
+}
+
+/* Своя запасная — над началом выделения */
+.mmt-sel-btn {
+    position: fixed;
+    z-index: 12001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--SmartThemeBodyColor);
+    background: var(--SmartThemeBlurTintColor);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 50%;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.mmt-sel-btn[hidden] {
+    display: none;
+}
+
+.mmt-sel-btn:hover {
+    color: var(--SmartThemeQuoteColor);
+}
+
+/* ---------- Ящик: категории (как в Junket) ---------- */
+
+.mmt-cat {
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+}
+
+.mmt-cat-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 10px;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.mmt-cat-chevron {
+    opacity: 0.6;
+    transition: transform 0.15s;
+}
+
+.mmt-cat-head[aria-expanded="true"] .mmt-cat-chevron {
+    transform: rotate(180deg);
+}
+
+.mmt-cat-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 10px 10px;
+}
+
+.mmt-cat-body[hidden] {
+    display: none;
+}
+
+.mmt-label {
+    margin-top: 6px;
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+.mmt-set-hint {
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
+.mmt-seg {
+    display: flex;
+    gap: 6px;
+}
+
+.mmt-seg-btn {
+    flex: 1;
+    padding: 5px 10px;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.mmt-seg-btn.active {
+    opacity: 1;
+    border-color: var(--SmartThemeQuoteColor);
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 18%, transparent);
+}
+
+/* ---------- Окно: выбор сцены ---------- */
+
+.mmt-icon-btn.mmt-active {
+    opacity: 1;
+    color: var(--SmartThemeQuoteColor);
+}
+
+.mmt-icon-btn[hidden] {
+    display: none;
+}
+
+.mmt-scene {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 8px 0 14px;
+}
+
+.mmt-scene-title {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+.mmt-scene-hint {
+    font-size: 0.85em;
+    opacity: 0.65;
+}
+
+.mmt-range-row {
+    display: flex;
+    gap: 12px;
+}
+
+.mmt-range-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.mmt-range-field input {
+    width: 96px;
+    margin: 0;
+}
+
+.mmt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.mmt-chip {
+    padding: 4px 12px;
+    color: inherit;
+    font: inherit;
+    font-size: 0.9em;
+    background: transparent;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.mmt-chip:hover {
+    border-color: var(--SmartThemeQuoteColor);
+}
+
+.mmt-range-summary {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.mmt-error {
+    color: var(--warning, #e0a23c);
+}
+
+.mmt-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mmt-preview-row {
+    padding: 8px 10px;
+    font-size: 0.9em;
+    line-height: 1.45;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+}
+
+.mmt-preview-id {
+    opacity: 0.55;
+    font-variant-numeric: tabular-nums;
+}
+
+.mmt-preview-name {
+    margin: 0 6px;
+    font-weight: 600;
+}
+
+.mmt-preview-gap {
+    font-size: 0.8em;
+    text-align: center;
+    opacity: 0.55;
+}
+
+.mmt-scene-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.mmt-scene-actions .menu_button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 6px 16px;
+}
+
+.mmt-scene-actions .menu_button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.mmt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    color: inherit;
+    font: inherit;
+    background: rgba(127, 127, 127, 0.12);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.mmt-btn:hover {
+    background: rgba(127, 127, 127, 0.22);
+}
+
+/* ---------- Временный просмотр карточки (до этапа 4) ---------- */
+
+.mmt-peek {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.mmt-peek[hidden] {
+    display: none;
+}
+
+.mmt-peek-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(440px, 100%);
+    max-height: 100%;
+    overflow-y: auto;
+    padding: 18px 20px;
+    color: var(--SmartThemeBodyColor);
+    background: var(--SmartThemeBlurTintColor);
+    border: 1px solid var(--mmt-rar);
+    border-radius: 12px;
+}
+
+.mmt-peek-stars {
+    color: var(--mmt-rar);
+    letter-spacing: 2px;
+}
+
+.mmt-peek-title {
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.mmt-peek-quote {
+    margin: 0;
+    padding: 2px 0 2px 12px;
+    line-height: 1.5;
+    border-left: 2px solid var(--mmt-rar);
+}
+
+.mmt-peek-note {
+    font-style: italic;
+    line-height: 1.5;
+    opacity: 0.85;
+}
+
+.mmt-peek-meta {
+    font-size: 0.8em;
+    opacity: 0.55;
+}
+
+.mmt-peek-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 /* ---------- Телефон: по одной странице ---------- */
