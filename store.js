@@ -33,6 +33,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     localModel: 'nano-banana-2.1',
     imageSize: '1K',             // только для Gemini-compatible
     sendRefs: true,              // рефы из слотов Frame
+    sendOutfits: true,           // аутфиты из гардероба Frame (то, что надето сейчас)
 
     // Стили: { id, name, tags, builtIn? }. Текст уходит в начало промпта для бананы.
     styles: [{ id: LADS_STYLE_ID, name: 'Воспоминание LADS', tags: LADS_STYLE, builtIn: true }],

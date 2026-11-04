@@ -96,7 +96,14 @@ function drawerHtml() {
             <input type="checkbox" id="mmt_send_refs" ${s.sendRefs ? 'checked' : ''}>
             <span>Рефы из слотов Frame</span>
         </label>
-        <div class="mmt-set-hint">Уходят рефы тех, чьё имя есть в промпте, и те, что во Frame отмечены «всегда». Не больше четырёх. Картинка всегда 3:4.</div>`;
+        <div class="mmt-set-hint">Уходят рефы тех, чьё имя есть в промпте, и те, что во Frame отмечены «всегда». Не больше четырёх. Картинка всегда 3:4.</div>
+        <div id="mmt_outfits_row" ${s.sendRefs ? '' : 'hidden'}>
+            <label class="checkbox_label mmt-check">
+                <input type="checkbox" id="mmt_send_outfits" ${s.sendOutfits ? 'checked' : ''}>
+                <span>Аутфиты из гардероба Frame</span>
+            </label>
+            <div class="mmt-set-hint">То, что надето сейчас, — картинкой сразу после рефа владельца и описанием в промпте. Галки «Отправлять описание / картинку» в гардеробе Frame тоже работают.</div>
+        </div>`;
 
     const styles = `
         <label for="mmt_style" class="mmt-label">Стиль карточек</label>
@@ -308,6 +315,11 @@ function bindDrawSettings() {
     });
     document.getElementById('mmt_send_refs').addEventListener('change', (e) => {
         getSettings().sendRefs = !!e.target.checked;
+        saveSettings();
+        document.getElementById('mmt_outfits_row').hidden = !e.target.checked;
+    });
+    document.getElementById('mmt_send_outfits').addEventListener('change', (e) => {
+        getSettings().sendOutfits = !!e.target.checked;
         saveSettings();
     });
     refreshModelSelects();

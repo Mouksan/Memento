@@ -461,16 +461,72 @@ export function getFrameCast() {
     if (!container) return [];
     const c = ctx();
     const out = [];
-    const push = (ref, fallback, always) => {
+    const push = (ref, fallback, always, role) => {
         if (!hasFrameImage(ref)) return;
         const name = String(ref.name || fallback || '').trim();
         if (!name) return;
-        out.push({ name, aliases: name.split(',').map((a) => a.trim()).filter(Boolean), ref, always: !!always });
+        out.push({ name, aliases: name.split(',').map((a) => a.trim()).filter(Boolean), ref, always: !!always, role });
     };
-    if (!c.groupId) push(container.charRef, c.name2, fw?.charRefAlways);
-    push(container.userRef, c.name1, fw?.userRefAlways);
-    for (const npc of Array.isArray(container.npcReferences) ? container.npcReferences : []) push(npc, '', false);
+    if (!c.groupId) push(container.charRef, c.name2, fw?.charRefAlways, 'bot');
+    push(container.userRef, c.name1, fw?.userRefAlways, 'user');
+    for (const npc of Array.isArray(container.npcReferences) ? container.npcReferences : []) push(npc, '', false, 'npc');
     return out;
+}
+
+// ---------- Аутфиты из гардероба Frame ----------
+// Frame отдаёт гардероб наружу через window.slayWardrobe. Логика — как у самого Frame:
+// картинка аутфита идёт сразу после рефа владельца, описание — в начало промпта.
+
+function wardrobe() {
+    const w = window.slayWardrobe;
+    return w && typeof w.isReady === 'function' && w.isReady() ? w : null;
+}
+
+function wardrobeSettings() {
+    return ctx().extensionSettings?.slay_wardrobe || {};
+}
+
+/** Можно ли слать картинку аутфита: галки «Отправлять картинку бот/юзер» в гардеробе Frame. */
+function outfitImageAllowed(type) {
+    const sw = wardrobeSettings();
+    return type === 'bot' ? sw.sendOutfitImageBot !== false : sw.sendOutfitImageUser !== false;
+}
+
+function toImageDataUrl(b64) {
+    const raw = String(b64 || '');
+    if (!raw) return null;
+    if (raw.startsWith('data:')) return raw;
+    const mime = raw.startsWith('/9j/') ? 'image/jpeg' : raw.startsWith('UklGR') ? 'image/webp' : 'image/png';
+    return `data:${mime};base64,${raw}`;
+}
+
+/** Картинка надетого аутфита (целый — или коллаж частей, если он включён во Frame). */
+async function getOutfitImage(type) {
+    const w = wardrobe();
+    if (!w || !outfitImageAllowed(type)) return null;
+    try {
+        const full = await w.getActiveOutfitBase64?.(type);
+        if (full) return toImageDataUrl(full);
+        if (w.getCollageBase64) return toImageDataUrl(await w.getCollageBase64(type));
+    } catch (error) {
+        console.warn(`[Memento] аутфит (${type}) пропущен:`, error?.message);
+    }
+    return null;
+}
+
+/** Описание надетого: строчка в начало промпта, как во Frame. */
+function getOutfitNote(type, hasImage) {
+    const w = wardrobe();
+    if (!w || wardrobeSettings().sendOutfitDescription === false) return '';
+    let desc = '';
+    try {
+        desc = String(w.getActiveOutfitDescription?.(type) || '').trim();
+    } catch {
+        return '';
+    }
+    if (!desc) return '';
+    const who = type === 'bot' ? "Character's" : "User's";
+    return `${hasImage ? '[Clothing reference only, avoid copying the pose] ' : ''}[${who} current outfit: ${desc}]`;
 }
 
 /** Канонические имена для промпта: первое имя каждого слота. */
@@ -507,24 +563,42 @@ async function frameRefToDataUrl(ref, signal) {
     return `data:${mime};base64,${b64}`;
 }
 
-/** Рефы под этот промпт: «всегда» из Frame и те, чьё имя есть в промпте. Не больше 4. Битый — пропускаем. */
+/**
+ * Рефы под этот промпт: «всегда» из Frame и те, чьё имя есть в промпте.
+ * Порядок как во Frame: перс → его аутфит → юзер → его аутфит → НПС. Не больше 4. Битый — пропускаем.
+ * Возвращает { refs, outfitNotes }.
+ */
 async function collectRefs(prompt, signal) {
-    const picked = getFrameCast().filter((e) => e.always || nameInText(e.aliases, prompt)).slice(0, MAX_REFS);
+    const settings = getSettings();
+    const inShot = getFrameCast().filter((e) => e.always || nameInText(e.aliases, prompt));
+    const ordered = [
+        ...inShot.filter((e) => e.role === 'bot'),
+        ...inShot.filter((e) => e.role === 'user'),
+        ...inShot.filter((e) => e.role === 'npc'),
+    ];
     const refs = [];
-    for (const entry of picked) {
+    const outfitNotes = [];
+
+    for (const entry of ordered) {
+        if (refs.length >= MAX_REFS) break;
+        const name = entry.aliases[0];
         try {
-            refs.push({
-                name: entry.aliases[0],
-                dataUrl: await frameRefToDataUrl(entry.ref, signal),
-                appearance: String(entry.ref.appearance || '').trim(),
-            });
+            refs.push({ name, dataUrl: await frameRefToDataUrl(entry.ref, signal), appearance: String(entry.ref.appearance || '').trim() });
         } catch (error) {
             if (error?.name === 'AbortError') throw error;
             console.warn(`[Memento] реф «${entry.name}» не прочитался:`, error);
-            toastr.warning(`Реф «${entry.aliases[0]}» не найден, рисую без него`, TOAST_TITLE, { timeOut: 4000 });
+            toastr.warning(`Реф «${name}» не найден, рисую без него`, TOAST_TITLE, { timeOut: 4000 });
         }
+        if (entry.role === 'npc' || !settings.sendOutfits) continue;
+
+        let outfit = null;
+        if (refs.length < MAX_REFS) outfit = await getOutfitImage(entry.role);
+        if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+        if (outfit) refs.push({ name: `${name}'s outfit`, dataUrl: outfit, appearance: '' });
+        const note = getOutfitNote(entry.role, Boolean(outfit));
+        if (note) outfitNotes.push(note);
     }
-    return refs;
+    return { refs, outfitNotes };
 }
 
 /** Заметки о внешности из слотов Frame — в конец промпта, только для тех, кто в кадре (как во Frame). */
@@ -571,8 +645,10 @@ export async function drawImage(prompt, signal) {
     if (!String(prompt || '').trim()) throw new Error('У карточки нет промпта для картинки');
 
     const style = getActiveStyle();
-    const refs = settings.sendRefs ? await collectRefs(prompt, signal) : [];
-    const finalPrompt = withAppearance(composeFinalPrompt(prompt, style), refs);
+    const { refs, outfitNotes } = settings.sendRefs ? await collectRefs(prompt, signal) : { refs: [], outfitNotes: [] };
+    // Порядок: стиль → что надето (как во Frame — перед сценой) → сцена → заметки о внешности
+    const scene = outfitNotes.length ? `${outfitNotes.join(' ')}\n${String(prompt).trim()}` : prompt;
+    const finalPrompt = withAppearance(composeFinalPrompt(scene, style), refs);
     const provider = settings.provider === 'local' ? 'local' : 'naistera';
     log(`рисую: ${PROVIDER_LABELS[provider]}, стиль: ${style?.name || 'нет'}, рефы: ${refs.map((r) => r.name).join(', ') || 'нет'}`, finalPrompt);
 
