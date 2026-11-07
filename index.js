@@ -388,12 +388,12 @@ async function develop(moment) {
             speaker: message?.name || '',
             calendarDate: findHearthDate(ctx().chat, fields.mesId) || false,
             createdAt: Date.now(),
+            revealed: false,     // вскрывается сценой вытягивания (этап 5)
         };
         const album = getAlbum();
         album.cards.push(card);
         await saveAlbum();
 
-        toastr.success(`Воспоминание добавлено в альбом: «${card.title}» ${starsText(card)}`, TOAST_TITLE);
         if (isOpen() && view === 'album') {
             const index = pageIndexOf(layoutPages(album.cards), card.id);
             if (index >= 0) pageCursor = index;
@@ -452,6 +452,7 @@ async function drawCard(cardId) {
     const missing = getMissingDrawSetting();
     if (missing) {
         toastr.warning(`Карточка без картинки — ${missing}. Загляни в настройки, «Рисование»`, TOAST_TITLE, { timeOut: 6000 });
+        if (card.revealed === false) announceNew(cardId);
         return;
     }
 
@@ -463,6 +464,8 @@ async function drawCard(cardId) {
     await saveAlbum();
     refreshViews(cardId);
     const title = card.title;
+    const sealed = card.revealed === false;
+    const label = sealed ? 'новое воспоминание' : `«${title}»`;
 
     let image = null;
     let failure = null;
@@ -482,9 +485,9 @@ async function drawCard(cardId) {
         if (image) {
             getSettings().mailbox.push({ chatId, cardId, image });
             saveSettings();
-            toastr.info(`Картинка для «${title}» готова — появится, когда вернёшься в тот чат`, TOAST_TITLE, { timeOut: 4000 });
+            toastr.info(sealed ? 'Новое воспоминание готово — ждёт в том чате' : `Картинка для «${title}» готова — появится, когда вернёшься в тот чат`, TOAST_TITLE, { timeOut: 4000 });
         } else {
-            toastr.error(`Банана не нарисовала «${title}» (${String(failure?.message || failure).slice(0, 200)})`, TOAST_TITLE, { timeOut: 8000 });
+            toastr.error(`Банана не нарисовала ${label} (${String(failure?.message || failure).slice(0, 200)})`, TOAST_TITLE, { timeOut: 8000 });
         }
         return;
     }
@@ -496,16 +499,35 @@ async function drawCard(cardId) {
     }
     if (image) {
         await applyImage(live, image);
-        toastr.success(`Картинка для «${title}» готова`, TOAST_TITLE, { timeOut: 2500 });
+        if (live.revealed === false) announceNew(cardId);
+        else toastr.success(`Картинка для «${title}» готова`, TOAST_TITLE, { timeOut: 2500 });
     } else {
         const text = String(failure?.message || failure);
         console.warn('[Memento] рисование упало:', failure);
         live.drawStatus = 'error';
         live.drawError = text;
         await saveAlbum();
-        toastr.error(`Банана не нарисовала «${title}» (${text.slice(0, 200)}). Карточка в альбоме — жми «Перерисовать»`, TOAST_TITLE, { timeOut: 8000 });
+        toastr.error(`Банана не нарисовала ${label} (${text.slice(0, 200)}). Карточка в альбоме — жми «Перерисовать»`, TOAST_TITLE, { timeOut: 8000, onclick: () => openAtCard(cardId) });
     }
     refreshViews(cardId);
+}
+
+/** Тост без спойлеров: название и редкость видно только после вытягивания. */
+function announceNew(cardId) {
+    toastr.success('Новое воспоминание ждёт в альбоме — нажми, чтобы открыть', TOAST_TITLE, {
+        timeOut: 8000,
+        onclick: () => openAtCard(cardId),
+    });
+}
+
+function openAtCard(cardId) {
+    const album = getAlbum();
+    if (!album?.cards.some((c) => c.id === cardId)) return;
+    const index = pageIndexOf(layoutPages(album.cards), cardId);
+    if (index >= 0) pageCursor = index;
+    view = 'album';
+    openWindow();
+    openCardView(cardId);
 }
 
 /** Дорисованное, пока ты была в другом чате, — на место. И сброс зависших «рисуется» после перезагрузки. */
@@ -557,9 +579,24 @@ function dateLine(card) {
     return [d.label, d.place].filter(Boolean).join(' · ');
 }
 
+let revealTimers = [];
+let revealingId = null;
+
+function clearReveal() {
+    revealTimers.forEach(clearTimeout);
+    revealTimers = [];
+    revealingId = null;
+}
+
 function openCardView(cardId) {
     const card = findCard(cardId);
     if (!card || !overlayEl) return;
+    if (revealingId === cardId) return;   // идёт вытягивание — не перебиваем его перерисовкой
+    const sealed = card.revealed === false;
+    if (sealed && card.drawStatus === 'drawing') {
+        toastr.info('Ещё проявляется…', TOAST_TITLE, { timeOut: 2000 });
+        return;
+    }
     if (viewId !== cardId) viewFlipped = false;
     viewId = cardId;
     ensureCalendarDate(card);
@@ -583,23 +620,29 @@ function openCardView(cardId) {
     box.innerHTML = `
         <div class="mmt-view-inner">
             <button class="mmt-icon-btn mmt-view-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
-            <button class="mmt-flip mmt-r${rarity} ${viewFlipped ? 'mmt-flipped' : ''}" type="button" title="Перевернуть">
+            <button class="mmt-flip mmt-r${rarity} ${viewFlipped || sealed ? 'mmt-flipped' : ''} ${sealed ? 'mmt-sealing' : ''}" type="button" title="Перевернуть">
+                ${sealed ? '<span class="mmt-rays" aria-hidden="true"></span>' : ''}
                 <span class="mmt-flip-inner">
                     <span class="mmt-face mmt-face-front">
                         ${art}
+                        ${rarity === 5 ? '<span class="mmt-holo" aria-hidden="true"></span>' : ''}
                         <span class="mmt-face-caption">
                             <span class="mmt-face-stars">${starsText(card)}</span>
                             <span class="mmt-face-title">${escapeHtml(card.title)}</span>
                         </span>
                     </span>
                     <span class="mmt-face mmt-face-back">
+                        <span class="mmt-seal" aria-hidden="true">
+                            <span class="mmt-seal-mark">✦</span>
+                            <span class="mmt-seal-name">MEMENTO</span>
+                        </span>
                         ${date ? `<span class="mmt-back-date">${escapeHtml(date)}</span>` : ''}
                         <span class="mmt-back-note">${escapeHtml(card.note || '…')}</span>
                         <span class="mmt-back-title">${escapeHtml(card.title)} ${starsText(card)}</span>
                     </span>
                 </span>
             </button>
-            <div class="mmt-view-side">
+            <div class="mmt-view-side ${sealed ? 'mmt-hidden-side' : ''}">
                 <blockquote class="mmt-view-quote mmt-r${rarity}">${escapeHtml(card.quote)}</blockquote>
                 <div class="mmt-view-meta">${meta}${date ? `<br>${escapeHtml(date)}` : ''}</div>
                 ${card.drawStatus === 'error' ? `<div class="mmt-view-error">${escapeHtml(card.drawError || 'Картинка не нарисовалась')}</div>` : ''}
@@ -614,12 +657,83 @@ function openCardView(cardId) {
     box.hidden = false;
 
     box.querySelector('.mmt-view-close').addEventListener('click', closeCardView);
-    box.querySelector('.mmt-flip').addEventListener('click', flipCard);
+    box.querySelector('.mmt-flip').addEventListener('click', () => {
+        if (revealingId) finishReveal(true);
+        else flipCard();
+    });
+    if (rarity === 5) bindHolo(box.querySelector('.mmt-flip'));
+    if (sealed) startReveal(card);
     box.querySelector('[data-act="flip"]').addEventListener('click', flipCard);
     box.querySelector('[data-act="jump"]').addEventListener('click', () => jumpToMoment(cardId));
     box.querySelector('[data-act="redraw"]').addEventListener('click', () => drawCard(cardId));
     box.querySelector('[data-act="delete"]').addEventListener('click', () => deleteCard(cardId));
     box.onmousedown = (e) => { if (e.target === box) closeCardView(); };
+}
+
+// ---------- Вытягивание ----------
+
+const REVEAL_CHARGE_MS = 1300;   // рубашка разгорается
+const REVEAL_FLIP_MS = 650;      // переворот (как .mmt-flip-inner в CSS)
+
+function startReveal(card) {
+    clearReveal();
+    revealingId = card.id;
+    const el = overlayEl.querySelector('.mmt-flip');
+    el.classList.add('mmt-charging');
+    revealTimers.push(setTimeout(() => finishReveal(false), REVEAL_CHARGE_MS));
+}
+
+/** Переворот на арт. skip — по клику: сразу, без ожидания. */
+function finishReveal(skip) {
+    const cardId = revealingId;
+    if (!cardId || !overlayEl) return;
+    revealTimers.forEach(clearTimeout);
+    revealTimers = [];
+    const box = overlayEl.querySelector('.mmt-view');
+    const el = box.querySelector('.mmt-flip');
+    el.classList.remove('mmt-charging', 'mmt-flipped');
+    el.classList.add('mmt-burst');
+    box.querySelector('.mmt-rays')?.classList.add('mmt-rays-on');
+    viewFlipped = false;
+
+    revealTimers.push(setTimeout(() => {
+        el.classList.remove('mmt-sealing');
+        box.querySelector('.mmt-view-side')?.classList.remove('mmt-hidden-side');
+        revealingId = null;
+        const card = findCard(cardId);
+        if (card) {
+            card.revealed = true;
+            saveAlbumDebounced();
+        }
+        if (isOpen() && view === 'album') render();
+    }, skip ? REVEAL_FLIP_MS / 2 : REVEAL_FLIP_MS));
+    revealTimers.push(setTimeout(() => el.classList.remove('mmt-burst'), 2200));
+}
+
+// ---------- Голография 5★ ----------
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function bindHolo(el) {
+    const reset = () => {
+        el.style.setProperty('--mx', '50%');
+        el.style.setProperty('--my', '50%');
+        el.style.setProperty('--rx', '0deg');
+        el.style.setProperty('--ry', '0deg');
+    };
+    reset();
+    el.addEventListener('pointermove', (e) => {
+        const r = el.getBoundingClientRect();
+        const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+        const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+        el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+        el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+        if (!REDUCED_MOTION.matches) {
+            el.style.setProperty('--rx', `${((x - 0.5) * 14).toFixed(2)}deg`);
+            el.style.setProperty('--ry', `${((0.5 - y) * 14).toFixed(2)}deg`);
+        }
+    });
+    el.addEventListener('pointerleave', reset);
 }
 
 function flipCard() {
@@ -630,6 +744,16 @@ function flipCard() {
 }
 
 function closeCardView() {
+    if (revealingId) {
+        // Закрыла посреди вытягивания — считаем вскрытой, второй раз не мучаем
+        const card = findCard(revealingId);
+        if (card) {
+            card.revealed = true;
+            saveAlbumDebounced();
+        }
+        clearReveal();
+        if (isOpen() && view === 'album') render();
+    }
     viewId = null;
     viewFlipped = false;
     const box = overlayEl?.querySelector('.mmt-view');

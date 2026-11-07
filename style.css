@@ -285,6 +285,8 @@
 .mmt-pockets-hero {
     grid-template-columns: 1fr;
     justify-items: center;
+    align-content: center;     /* 5★ — по центру страницы */
+    height: 100%;
 }
 
 .mmt-pockets-hero .mmt-pocket {
@@ -1030,6 +1032,248 @@
 @keyframes mmt-flash {
     0%, 30% { box-shadow: inset 0 0 0 2px var(--SmartThemeQuoteColor); background-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 12%, transparent); }
     100% { box-shadow: inset 0 0 0 2px transparent; background-color: transparent; }
+}
+
+/* ---------- Вытягивание и голография (этап 5) ---------- */
+
+.mmt-r3 { --mmt-rays: 0.4; }
+.mmt-r4 { --mmt-rays: 0.65; }
+.mmt-r5 { --mmt-rays: 1; }
+
+/* Рубашка: в кармашке у запечатанной и в большом виде до переворота */
+.mmt-seal {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--mmt-rar);
+    background:
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 11px),
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 11px),
+        radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--mmt-rar) 30%, #1a1822), #0e0d13 72%);
+}
+
+.mmt-seal::before {
+    content: '';
+    position: absolute;
+    inset: 7%;
+    border: 1px solid color-mix(in srgb, var(--mmt-rar) 45%, transparent);
+    border-radius: 6px;
+}
+
+.mmt-seal-mark {
+    font-size: 2.4em;
+    line-height: 1;
+    text-shadow: 0 0 14px var(--mmt-rar), 0 0 32px color-mix(in srgb, var(--mmt-rar) 60%, transparent);
+}
+
+.mmt-seal-name {
+    font-size: 0.62em;
+    letter-spacing: 4px;
+    opacity: 0.8;
+}
+
+.mmt-card.mmt-sealed {
+    background: #0e0d13;
+    animation: mmt-sealed-glow 2.6s ease-in-out infinite;
+}
+
+.mmt-card.mmt-sealed .mmt-seal-mark {
+    font-size: 1.8em;
+}
+
+@keyframes mmt-sealed-glow {
+    0%, 100% { box-shadow: 0 0 4px color-mix(in srgb, var(--mmt-rar) 30%, transparent); }
+    50% { box-shadow: 0 0 16px color-mix(in srgb, var(--mmt-rar) 75%, transparent); }
+}
+
+/* В большом виде рубашка закрывает оборот, пока карточка не вытянута */
+.mmt-face-back .mmt-seal {
+    display: none;
+    z-index: 1;
+    border-radius: 9px;
+}
+
+.mmt-sealing .mmt-face-back .mmt-seal {
+    display: flex;
+}
+
+.mmt-sealing .mmt-face-back .mmt-seal-mark {
+    font-size: 4em;
+}
+
+.mmt-sealing .mmt-face-back .mmt-seal-name {
+    font-size: 0.9em;
+    letter-spacing: 8px;
+}
+
+.mmt-view-side {
+    transition: opacity 0.45s ease;
+}
+
+.mmt-view-side.mmt-hidden-side {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Рубашка разгорается */
+.mmt-flip {
+    position: relative;
+}
+
+.mmt-charging {
+    animation: mmt-charge 1.3s ease-in forwards;
+}
+
+.mmt-charging .mmt-face-back {
+    animation: mmt-charge-glow 1.3s ease-in forwards;
+}
+
+@keyframes mmt-charge {
+    0% { transform: scale(0.92); }
+    70% { transform: scale(1.01); }
+    80% { transform: scale(1) rotate(-1deg); }
+    90% { transform: scale(1.01) rotate(1deg); }
+    100% { transform: scale(1.02); }
+}
+
+@keyframes mmt-charge-glow {
+    0% { box-shadow: 0 0 0 transparent; }
+    100% { box-shadow: 0 0 40px var(--mmt-rar), 0 0 90px color-mix(in srgb, var(--mmt-rar) 55%, transparent); }
+}
+
+/* Вспышка после переворота */
+.mmt-burst .mmt-face-front {
+    animation: mmt-burst 1.6s ease-out;
+}
+
+.mmt-burst .mmt-face-front::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 45%, #fff, color-mix(in srgb, var(--mmt-rar) 70%, transparent) 45%, transparent 75%);
+    animation: mmt-flash-out 1s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes mmt-burst {
+    0% { box-shadow: 0 0 60px var(--mmt-rar), 0 0 120px color-mix(in srgb, var(--mmt-rar) 70%, transparent); }
+    100% { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 24px color-mix(in srgb, var(--mmt-rar) 25%, transparent); }
+}
+
+@keyframes mmt-flash-out {
+    0% { opacity: 0.95; }
+    100% { opacity: 0; }
+}
+
+/* Лучи за карточкой */
+.mmt-rays {
+    position: absolute;
+    inset: -32%;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--mmt-rar) 60%, transparent) 0deg 5deg, transparent 5deg 17deg);
+    -webkit-mask-image: radial-gradient(circle, #000 25%, transparent 68%);
+    mask-image: radial-gradient(circle, #000 25%, transparent 68%);
+}
+
+.mmt-charging .mmt-rays {
+    animation: mmt-rays-spin 8s linear infinite, mmt-rays-charge 1.3s ease-in forwards;
+}
+
+.mmt-rays.mmt-rays-on {
+    animation: mmt-rays-spin 8s linear infinite, mmt-rays-burst 2.2s ease-out forwards;
+}
+
+@keyframes mmt-rays-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes mmt-rays-charge {
+    to { opacity: calc(var(--mmt-rays) * 0.35); }
+}
+
+@keyframes mmt-rays-burst {
+    0% { opacity: var(--mmt-rays); }
+    100% { opacity: 0; }
+}
+
+/* Голография 5★: перелив за мышкой и лёгкий наклон */
+.mmt-flip.mmt-r5:not(.mmt-charging) {
+    transform: perspective(900px) rotateX(var(--ry, 0deg)) rotateY(var(--rx, 0deg));
+    transition: transform 0.18s ease-out;
+}
+
+.mmt-holo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.42;
+    mix-blend-mode: color-dodge;
+    background: linear-gradient(115deg,
+        transparent 22%,
+        hsla(330, 100%, 72%, 0.55) 32%,
+        hsla(45, 100%, 70%, 0.55) 40%,
+        hsla(140, 100%, 70%, 0.5) 48%,
+        hsla(195, 100%, 70%, 0.55) 56%,
+        hsla(275, 100%, 72%, 0.55) 64%,
+        transparent 76%);
+    background-size: 260% 260%;
+    background-position: var(--mx, 50%) var(--my, 50%);
+}
+
+.mmt-holo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: overlay;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.55), transparent 42%);
+}
+
+/* На телефоне мышки нет — перелив гуляет сам */
+@media (hover: none) {
+    .mmt-holo {
+        animation: mmt-holo-drift 6s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes mmt-holo-drift {
+    from { background-position: 0% 20%; }
+    to { background-position: 100% 80%; }
+}
+
+/* 5★ в кармашке — изредка пробегает блик */
+.mmt-card.mmt-r5:not(.mmt-sealed)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 240, 200, 0.35) 48%, rgba(190, 220, 255, 0.3) 52%, transparent 65%);
+    background-size: 300% 100%;
+    background-position: 120% 0;
+    animation: mmt-sheen 7s ease-in-out infinite;
+}
+
+@keyframes mmt-sheen {
+    0%, 72% { background-position: 120% 0; }
+    100% { background-position: -20% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mmt-card.mmt-sealed,
+    .mmt-charging,
+    .mmt-charging .mmt-face-back,
+    .mmt-burst .mmt-face-front,
+    .mmt-holo,
+    .mmt-card.mmt-r5::after,
+    .mmt-rays,
+    .mmt-rays.mmt-rays-on {
+        animation: none !important;
+    }
 }
 
 /* ---------- Телефон ---------- */

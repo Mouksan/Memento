@@ -55,6 +55,18 @@ export function pageIndexOf(pages, cardId) {
 // Карточка в кармашке. Картинки появятся на этапе 3 — пока вместо неё подложка цвета редкости.
 function cardHtml(card) {
     const rarity = rarityOf(card);
+    // Запечатанная (ещё не вытянутая): рубашка со свечением редкости, без спойлеров
+    if (card.revealed === false) {
+        const wait = card.drawStatus === 'drawing' ? '<span class="mmt-card-badge mmt-card-drawing" title="Проявляется"><i class="fa-solid fa-spinner fa-spin"></i></span>' : '';
+        return `
+            <button type="button" class="mmt-card mmt-r${rarity} mmt-sealed" data-card="${escapeHtml(card.id)}" title="Новое воспоминание">
+                <span class="mmt-seal" aria-hidden="true">
+                    <span class="mmt-seal-mark">✦</span>
+                    <span class="mmt-seal-name">MEMENTO</span>
+                </span>
+                ${wait}
+            </button>`;
+    }
     const art = card.image
         ? `<img class="mmt-card-img" src="${escapeHtml(card.image)}" alt="" loading="lazy">`
         : `<div class="mmt-card-blank"><i class="fa-solid fa-camera-retro"></i></div>`;
