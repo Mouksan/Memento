@@ -10,6 +10,7 @@ import {
 } from './store.js';
 import { drawImage, deleteImageFile, getMissingDrawSetting } from './image.js';
 import { layoutPages, bookPagesHtml, pageIndexOf, starsText, rarityOf } from './album.js';
+import { THEMES, getTheme, effectiveThemeId, bindingHtml } from './themes.js';
 import { PageFlip } from './lib/page-flip.module.js';
 import { findHearthDate } from './hearth.js';
 import { addSettingsDrawer, ICON } from './settings.js';
@@ -34,7 +35,9 @@ function buildWindow() {
             <div class="mmt-header">
                 <div class="mmt-title"><i class="fa-solid ${ICON}"></i><span>「 MEMENTO 」</span></div>
                 <div class="mmt-chatname"></div>
+                <button class="mmt-icon-btn mmt-theme-btn" type="button" title="Тема альбома" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-palette"></i></button>
                 <button class="mmt-icon-btn mmt-scene-btn" type="button" title="Выбрать сцену"><i class="fa-solid fa-film"></i></button>
+                <div class="mmt-theme-menu" hidden></div>
                 <button class="mmt-icon-btn mmt-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="mmt-body"></div>
@@ -50,8 +53,15 @@ function buildWindow() {
     overlay.querySelector('.mmt-prev').addEventListener('click', () => turn(-1));
     overlay.querySelector('.mmt-next').addEventListener('click', () => turn(1));
     overlay.querySelector('.mmt-scene-btn').addEventListener('click', () => setView(view === 'scene' ? 'album' : 'scene'));
+    overlay.querySelector('.mmt-theme-btn').addEventListener('click', toggleThemeMenu);
+    overlay.querySelector('.mmt-theme-menu').addEventListener('click', onThemeMenuClick);
 
     overlay.querySelector('.mmt-body').addEventListener('click', (e) => {
+        const edit = e.target.closest('.mmt-scribble-edit[data-scribble]');
+        if (edit) {
+            editScribble(edit.dataset.scribble);
+            return;
+        }
         const card = e.target.closest('.mmt-card[data-card]');
         if (card) openCardView(card.dataset.card);
     });
@@ -73,7 +83,8 @@ function onKeyDown(e) {
     if (!isOpen()) return;
     if (document.querySelector('dialog[open]')) return;   // попап таверны поверх — пусть он сам
     if (e.key === 'Escape') {
-        if (viewId) closeCardView();
+        if (isThemeMenuOpen()) closeThemeMenu();
+        else if (viewId) closeCardView();
         else if (view === 'scene') setView('album');
         else closeWindow();
         return;
@@ -102,6 +113,7 @@ function openWindow(nextView = 'album') {
 
 function closeWindow() {
     if (!overlayEl) return;
+    closeThemeMenu();
     closeCardView();
     destroyBook();
     overlayEl.classList.remove('mmt-open');
@@ -157,14 +169,17 @@ function pageSize() {
 
 function renderBook(body, album) {
     destroyBook();
+    const themeId = effectiveThemeId(album, getSettings());
     const pages = layoutPages(album.cards);
     pageCursor = Math.max(0, Math.min(pageCursor, pages.length - 1));
     const count = album.cards.length;
 
     body.innerHTML = `
-        <div class="mmt-binder mmt-theme-${escapeHtml(getSettings().theme)}">
-            <div class="mmt-book-host"><div class="mmt-book">${bookPagesHtml(pages)}</div></div>
-            <div class="mmt-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="mmt-binder mmt-th-${themeId}">
+            <div class="mmt-book-host">
+                <div class="mmt-book">${bookPagesHtml(pages)}</div>
+                ${bindingHtml(themeId)}
+            </div>
             ${count ? '' : `
                 <div class="mmt-empty-note">
                     Здесь пока пусто. Выдели любимый момент в чате — и он станет первой карточкой.
@@ -233,6 +248,87 @@ function render() {
 
     footer.hidden = false;
     renderBook(body, album);
+}
+
+// ---------- Тема альбома (своя у чата) ----------
+
+function isThemeMenuOpen() {
+    return Boolean(overlayEl && !overlayEl.querySelector('.mmt-theme-menu').hidden);
+}
+
+function closeThemeMenu() {
+    if (!overlayEl) return;
+    overlayEl.querySelector('.mmt-theme-menu').hidden = true;
+    overlayEl.querySelector('.mmt-theme-btn').setAttribute('aria-expanded', 'false');
+    document.removeEventListener('mousedown', onOutsideThemeMenu, true);
+}
+
+function onOutsideThemeMenu(e) {
+    if (e.target.closest?.('.mmt-theme-menu, .mmt-theme-btn')) return;
+    closeThemeMenu();
+}
+
+function toggleThemeMenu() {
+    if (isThemeMenuOpen()) {
+        closeThemeMenu();
+        return;
+    }
+    const album = getAlbum();
+    if (!album) return;
+    const settings = getSettings();
+    const own = album.theme && getTheme(album.theme).id === album.theme ? album.theme : '';
+    const fallback = getTheme(settings.theme).name;
+    const item = (id, name, swatch, { active, disabled, note } = {}) => `
+        <button type="button" class="mmt-theme-item ${active ? 'mmt-active' : ''}" data-theme="${id}" ${disabled ? 'disabled' : ''}>
+            <span class="mmt-theme-swatch" style="background: ${swatch};"></span>
+            <span class="mmt-theme-name">${escapeHtml(name)}</span>
+            ${note ? `<span class="mmt-theme-note">${escapeHtml(note)}</span>` : ''}
+            ${active ? '<i class="fa-solid fa-check"></i>' : ''}
+        </button>`;
+    const menu = overlayEl.querySelector('.mmt-theme-menu');
+    menu.innerHTML = `
+        <div class="mmt-theme-head">Тема этого альбома</div>
+        ${item('', `По умолчанию (${fallback})`, getTheme(settings.theme).swatch, { active: !own })}
+        ${THEMES.map((t) => item(t.id, t.name, t.swatch, { active: own === t.id, disabled: !t.ready, note: t.ready ? '' : 'скоро' })).join('')}`;
+    menu.hidden = false;
+    overlayEl.querySelector('.mmt-theme-btn').setAttribute('aria-expanded', 'true');
+    document.addEventListener('mousedown', onOutsideThemeMenu, true);
+}
+
+function onThemeMenuClick(e) {
+    const btn = e.target.closest('.mmt-theme-item');
+    if (!btn || btn.disabled) return;
+    const album = getAlbum();
+    if (!album) return;
+    album.theme = btn.dataset.theme || null;
+    saveAlbumDebounced();
+    closeThemeMenu();
+    render();
+}
+
+// ---------- Приписка на полях 5★ ----------
+
+async function editScribble(cardId) {
+    const card = findCard(cardId);
+    if (!card) return;
+    const c = ctx();
+    let value;
+    if (typeof c.callGenericPopup === 'function' && c.POPUP_TYPE?.INPUT !== undefined) {
+        value = await c.callGenericPopup(
+            '<h3>Приписка на полях</h3><div>1–4 слова. Сотри всё — и приписки не будет.</div>',
+            c.POPUP_TYPE.INPUT,
+            card.scribble || '',
+            { okButton: 'Сохранить', cancelButton: 'Отмена', rows: 2 },
+        );
+    } else {
+        value = window.prompt('Приписка на полях (1–4 слова). Пусто — убрать.', card.scribble || '');
+    }
+    if (typeof value !== 'string') return;   // отмена
+    const live = findCard(cardId);
+    if (!live) return;
+    live.scribble = value.replace(/\s+/g, ' ').trim().slice(0, 60);
+    await saveAlbum();
+    render();
 }
 
 // ---------- Выбор сцены (как в Junket) ----------
@@ -380,6 +476,7 @@ async function develop(moment) {
             rarity: fields.rarity,
             quote: fields.quote,
             note: fields.note,
+            scribble: fields.scribble,
             prompt: fields.prompt,
             image: '',
             mesId: fields.mesId,
@@ -622,6 +719,7 @@ function openCardView(cardId) {
     ].filter(Boolean).join(' · ');
 
     const box = overlayEl.querySelector('.mmt-view');
+    box.className = `mmt-view mmt-th-${effectiveThemeId(getAlbum(), getSettings())}`;
     box.innerHTML = `
         <div class="mmt-view-inner">
             <button class="mmt-icon-btn mmt-view-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>

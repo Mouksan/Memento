@@ -1,0 +1,190 @@
+/* Memento — тема «Полночный биндер» (по умолчанию).
+   Матовый софт-тач с прострочкой, чёрный картон, прозрачные файлы,
+   хромированные кольца на стальной планке. */
+
+/* Обложка */
+.mmt-th-binder.mmt-binder {
+    background:
+        url('../assets/leather.png'),
+        url('../assets/grain.png'),
+        radial-gradient(120% 90% at 20% 0%, #3a3560 0%, #26233f 45%, #17152a 100%);
+    background-size: 192px, 160px, cover;
+    background-blend-mode: soft-light, overlay, normal;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -40px 80px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 24px 50px rgba(0, 0, 0, 0.55),
+        0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Прострочка по краю обложки */
+.mmt-th-binder.mmt-binder::before {
+    content: '';
+    position: absolute;
+    inset: 9px;
+    border: 1.5px dashed rgba(206, 192, 255, 0.3);
+    border-radius: 13px;
+    pointer-events: none;
+}
+
+/* Страницы: чёрный картон с зерном, стопка листов по внешнему краю */
+.mmt-th-binder .mmt-page {
+    color: #f5f0e6;
+    background:
+        url('../assets/grain.png'),
+        radial-gradient(140% 100% at 50% 0%, #201f26 0%, #17161b 70%);
+    background-size: 160px, cover;
+}
+
+.mmt-th-binder .mmt-page-left {
+    border-radius: 6px 0 0 6px;
+    box-shadow:
+        -1px 1px 0 #2b2a32, -2px 2px 0 #121115, -3px 3px 0 #2b2a32, -4px 4px 0 #121115,
+        inset -30px 0 40px -20px rgba(0, 0, 0, 0.65);
+}
+
+.mmt-th-binder .mmt-page-right,
+.mmt-th-binder.mmt-portrait .mmt-page-left {
+    border-radius: 0 6px 6px 0;
+    box-shadow:
+        1px 1px 0 #2b2a32, 2px 2px 0 #121115, 3px 3px 0 #2b2a32, 4px 4px 0 #121115,
+        inset 30px 0 40px -20px rgba(0, 0, 0, 0.65);
+}
+
+/* Дырки от колец */
+.mmt-th-binder .mmt-holes {
+    display: block;
+}
+
+.mmt-th-binder .mmt-holes span {
+    background: #0b0a10;
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Механизм: стальная планка с заклёпками и маленькие хромированные кольца */
+.mmt-th-binder .mmt-plate {
+    position: absolute;
+    top: 22px;
+    bottom: 22px;
+    left: -10px;
+    width: 20px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #1c1c22 0%, #3b3b45 22%, #5a5a66 50%, #3b3b45 78%, #1c1c22 100%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.mmt-th-binder .mmt-rivet {
+    position: absolute;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #d8d8e0, #6a6a74 60%, #2a2a30);
+}
+
+.mmt-th-binder .mmt-rivet:first-child { top: 9px; }
+.mmt-th-binder .mmt-rivet:last-child { bottom: 9px; }
+
+.mmt-th-binder .mmt-ring {
+    position: absolute;
+    left: -27px;
+    width: 54px;
+    height: 11px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #ffffff 0%, #d6d6de 18%, #8a8a96 46%, #4c4c56 56%, #a8a8b2 78%, #ececf2 100%);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.55), 0 1px 1px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Кольцо на уровне своей дырки: дырка 9px в 13/49/85% страницы */
+.mmt-th-binder .mmt-ring-1 { top: calc(13% - 1px); }
+.mmt-th-binder .mmt-ring-2 { top: calc(49% - 1px); }
+.mmt-th-binder .mmt-ring-3 { top: calc(85% - 1px); }
+
+/* Кармашек: прозрачный файл — кромка сверху, швы, блик поверх карточки */
+.mmt-th-binder .mmt-pocket {
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.025);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+        inset 0 0 0 4px rgba(255, 255, 255, 0.02),
+        0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.mmt-th-binder .mmt-pocket::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 3;
+    height: 13px;
+    border-radius: 5px 5px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+}
+
+.mmt-th-binder .mmt-pocket::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    border-radius: 5px;
+    background:
+        linear-gradient(118deg, transparent 18%, rgba(255, 255, 255, 0.15) 27%, rgba(255, 255, 255, 0.02) 34%, transparent 40%),
+        linear-gradient(118deg, transparent 62%, rgba(255, 255, 255, 0.06) 68%, transparent 73%);
+    pointer-events: none;
+}
+
+/* Карточка: рамка редкости с мягким свечением */
+.mmt-th-binder .mmt-card {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 14px color-mix(in srgb, var(--mmt-rar) 25%, transparent);
+}
+
+.mmt-th-binder .mmt-card:hover,
+.mmt-th-binder .mmt-card:focus-visible {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 0 18px color-mix(in srgb, var(--mmt-rar) 45%, transparent);
+}
+
+/* 5★: золотая рамка с двойной линией */
+.mmt-th-binder .mmt-card.mmt-r5:not(.mmt-sealed) {
+    border-width: 3px;
+    box-shadow: 0 0 0 1px #6b5420, 0 0 0 4px rgba(240, 207, 122, 0.22), 0 0 26px rgba(240, 207, 122, 0.32);
+}
+
+/* Рубашка: полночь с золотой гильошью — и в кармашке, и в вытягивании */
+.mmt-th-binder .mmt-seal {
+    color: #e9cf86;
+    background:
+        repeating-radial-gradient(circle at 50% 45%, rgba(233, 207, 134, 0.09) 0 1px, transparent 1px 7px),
+        radial-gradient(circle at 50% 42%, #2c2a52 0%, #15142a 70%);
+}
+
+.mmt-th-binder .mmt-seal::before {
+    inset: 9px;
+    border: 1px solid rgba(233, 207, 134, 0.55);
+    outline: 1px solid rgba(233, 207, 134, 0.22);
+    outline-offset: 3px;
+    border-radius: 3px;
+}
+
+.mmt-th-binder .mmt-seal-mark {
+    text-shadow: 0 0 10px rgba(233, 207, 134, 0.8), 0 0 26px color-mix(in srgb, var(--mmt-rar) 70%, transparent);
+}
+
+.mmt-th-binder .mmt-seal-name {
+    font-variant: small-caps;
+    letter-spacing: 5px;
+}
+
+/* Номера страниц и приписка белой гелевой ручкой по чёрному картону */
+.mmt-th-binder .mmt-page-num {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mmt-th-binder .mmt-scribble {
+    color: rgba(236, 230, 252, 0.82);
+    text-shadow: 0 0 1px rgba(236, 230, 252, 0.3);
+}

@@ -5,6 +5,7 @@ import {
     DEFAULT_NAISTERA_ENDPOINT, DEFAULT_LOCAL_ENDPOINT, IMAGE_SIZES, TOAST_TITLE,
 } from './store.js';
 import { fetchCatalog, getCatalog, resetProviderState } from './image.js';
+import { THEMES, getTheme } from './themes.js';
 
 export const ICON = 'fa-book-bookmark';
 
@@ -116,7 +117,12 @@ function drawerHtml() {
         <input type="file" id="mmt_style_import_file" accept="application/json,.json" hidden>
         <div class="mmt-set-hint">Текст стиля уходит в начало промпта для бананы.</div>`;
 
+    const themeOptions = THEMES.filter((t) => t.ready)
+        .map((t) => `<option value="${t.id}" ${getTheme(s.theme).id === t.id ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('');
     const album = `
+        <label for="mmt_default_theme" class="mmt-label">Тема по умолчанию</label>
+        <select id="mmt_default_theme" class="text_pole">${themeOptions}</select>
+        <div class="mmt-set-hint">Для чатов, где своя тема не выбрана. Свою выбирают кнопкой с палитрой в шапке альбома.</div>
         <label class="checkbox_label mmt-check">
             <input type="checkbox" id="mmt_auto_reveal" ${s.autoReveal ? 'checked' : ''}>
             <span>Открывать вытягивание сразу</span>
@@ -257,6 +263,10 @@ export function addSettingsDrawer(onOpenWindow) {
     });
     bindText('mmt_jb_text', 'jailbreakText');
 
+    document.getElementById('mmt_default_theme').addEventListener('change', (e) => {
+        getSettings().theme = getTheme(e.target.value).id;
+        saveSettings();
+    });
     document.getElementById('mmt_auto_reveal').addEventListener('change', (e) => {
         getSettings().autoReveal = !!e.target.checked;
         saveSettings();

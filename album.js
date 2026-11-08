@@ -1,6 +1,7 @@
 // Memento — раскладка карточек по страницам и вёрстка биндера.
 
 import { escapeHtml } from './store.js';
+import { scribbleSpot, scribbleTilt } from './themes.js';
 
 export const POCKETS_PER_PAGE = 4;   // 3★ и 4★ — сетка 2×2
 
@@ -88,10 +89,26 @@ function pocketHtml(card) {
     return `<div class="mmt-pocket ${card ? 'mmt-filled' : ''}">${card ? cardHtml(card) : ''}</div>`;
 }
 
+/**
+ * Приписка на полях 5★ страницы и карандаш в её внешнем верхнем углу.
+ * У запечатанной карточки — ничего: приписка была бы спойлером.
+ */
+function scribbleHtml(card) {
+    if (!card || card.revealed === false) return '';
+    const text = String(card.scribble || '').trim();
+    const note = text
+        ? `<span class="mmt-scribble mmt-spot-${scribbleSpot(card.id)}" style="--mmt-tilt: ${scribbleTilt(card.id)}deg;">${escapeHtml(text)}</span>`
+        : '';
+    return `${note}
+        <button type="button" class="mmt-scribble-edit" data-scribble="${escapeHtml(card.id)}" title="${text ? 'Изменить приписку' : 'Добавить приписку'}" aria-label="${text ? 'Изменить приписку' : 'Добавить приписку'}">
+            <i class="fa-solid fa-pen"></i>
+        </button>`;
+}
+
 export function pageHtml(page, side, pageNumber) {
     let inner;
     if (page.kind === 'hero') {
-        inner = `<div class="mmt-pockets mmt-pockets-hero">${pocketHtml(page.cards[0])}</div>`;
+        inner = `<div class="mmt-pockets mmt-pockets-hero">${pocketHtml(page.cards[0])}</div>${scribbleHtml(page.cards[0])}`;
     } else {
         const pockets = [];
         for (let i = 0; i < POCKETS_PER_PAGE; i++) pockets.push(pocketHtml(page.cards[i]));

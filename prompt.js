@@ -66,6 +66,7 @@ Return ONLY a JSON object, no commentary, no markdown fences:
   "title": "<card title in Russian>",
   "rarity": <3, 4 or 5>,
   "note": "<handwritten note on the back of the card, in Russian>",
+  "scribble": "<margin scribble, 1-4 words, in Russian>",
   "prompt": "<image prompt in English>"
 }
 
@@ -78,6 +79,8 @@ RARITY — how much this moment matters for the relationship between {{char}} an
 Judge honestly; most moments are 3 or 4. Use the album statistics below to keep 5 rare.
 
 NOTE — written by {{char}} in first person, in their own voice and manner of speech, to {{user}}, as if signing the back of a photo. 1 to 3 sentences, personal, about this exact moment. No signature line.
+
+SCRIBBLE — a tiny margin note in the album next to the card, written by whoever keeps the album: a live, informal reaction to the moment. 1 to 4 words in Russian, can be lifted from a line of the moment or react to it, may end with "!!", "?!" or "…". Examples of the register: «Дитя?..», «наследник?!», «волчонок!!», «ну и взгляд». No quotation marks.
 
 PROMPT — one vertical 3:4 illustration of the moment for an image model: who is there (use the character names; if IMAGE NAMES are given, use exactly those spellings), their poses and expressions, the setting, lighting and mood. Concrete and visual, 60-120 words, in English, no text or lettering in the image. The art style is added separately — do not describe a medium or rendering style. Keep it suggestive, never explicit.`;
 
@@ -161,6 +164,13 @@ export function cardFromAnswer(data, moment, range) {
     const rarity = Math.min(5, Math.max(3, Math.round(Number(data.rarity)) || 3));
     const title = String(data.title || '').replace(/^[«"'\s]+|[»"'\s]+$/g, '').trim() || 'Без названия';
     const note = String(data.note || '').trim();
+    // Приписка: 1–4 слова, без кавычек по краям
+    const scribble = String(data.scribble || '')
+        .replace(/^[«"'\s]+|[»"'\s]+$/g, '')
+        .replace(/\s+/g, ' ')
+        .split(' ').slice(0, 5).join(' ')
+        .slice(0, 40)
+        .trim();
     const prompt = String(data.prompt || '').trim();
 
     let quote;
@@ -185,5 +195,5 @@ export function cardFromAnswer(data, moment, range) {
             if (mesId === -1) mesId = inRange(asked) ? asked : range.to;
         }
     }
-    return { title, rarity, quote, note, prompt, mesId };
+    return { title, rarity, quote, note, scribble, prompt, mesId };
 }
