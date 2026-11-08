@@ -1,0 +1,230 @@
+/* Memento — тема «Полароид».
+   Чёрный лён, металлическая пружина, карточки в полароидных рамках с подписью от руки.
+   Запечатанная карточка — непроявленный снимок, вытягивание — проявка. */
+
+/* Обложка: чёрный лён */
+.mmt-th-polaroid.mmt-binder {
+    border-radius: 12px;
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 3px),
+        url('../assets/grain.png'),
+        linear-gradient(160deg, #2a2a2e 0%, #1a1a1d 100%);
+    background-size: auto, auto, 160px, cover;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 0 40px rgba(0, 0, 0, 0.6),
+        0 24px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* Страницы: чёрная фотобумага */
+.mmt-th-polaroid .mmt-page {
+    color: #f4f1ea;
+    background:
+        url('../assets/grain.png'),
+        linear-gradient(180deg, #232226 0%, #1b1a1e 100%);
+    background-size: 140px, cover;
+}
+
+.mmt-th-polaroid .mmt-page-left {
+    border-radius: 4px 0 0 4px;
+    box-shadow: -2px 2px 0 #303034, -4px 4px 0 #141416;
+}
+
+.mmt-th-polaroid .mmt-page-right,
+.mmt-th-polaroid.mmt-portrait .mmt-page-left {
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 2px 0 #303034, 4px 4px 0 #141416;
+}
+
+/* Перфорация под пружину у внутреннего края */
+.mmt-th-polaroid .mmt-page::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    bottom: 18px;
+    width: 8px;
+    background: radial-gradient(circle, #0b0b0d 3px, transparent 3.6px) 0 0 / 8px 22px;
+    pointer-events: none;
+}
+
+.mmt-th-polaroid .mmt-page-left::after { right: 9px; }
+.mmt-th-polaroid .mmt-page-right::after,
+.mmt-th-polaroid.mmt-portrait .mmt-page-left::after { right: auto; left: 9px; }
+
+/* Пружина */
+.mmt-th-polaroid .mmt-spiral {
+    position: absolute;
+    top: 18px;
+    bottom: 18px;
+    left: -21px;
+    width: 42px;
+    background: repeating-linear-gradient(180deg,
+        transparent 0 7px,
+        #3f3f46 7px, #c9c9d0 8.5px, #f2f2f5 10px, #a9a9b2 12px, #55555d 13.5px,
+        transparent 13.5px 22px);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.6));
+}
+
+/* Карточка — полароид: белая рамка, снимок, подпись рукой снизу */
+.mmt-th-polaroid .mmt-pockets {
+    gap: 22px 22px;
+}
+
+.mmt-th-polaroid .mmt-pocket:not(.mmt-filled) {
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.mmt-th-polaroid .mmt-pocket.mmt-filled {
+    transform: rotate(var(--mmt-card-tilt, 0deg));
+}
+
+.mmt-th-polaroid .mmt-card {
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 7px 7px 0;
+    background: linear-gradient(180deg, #fbfaf6 0%, #efede6 100%);
+    border: none;
+    border-radius: 1px;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mmt-th-polaroid .mmt-card:hover,
+.mmt-th-polaroid .mmt-card:focus-visible {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6), 0 0 14px color-mix(in srgb, var(--mmt-rar) 50%, transparent);
+}
+
+.mmt-th-polaroid .mmt-card-img,
+.mmt-th-polaroid .mmt-card-blank {
+    flex: none;
+    height: calc(100% - 42px);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.mmt-th-polaroid .mmt-card-caption {
+    left: 6px;
+    right: 6px;
+    bottom: 0;
+    height: 42px;
+    justify-content: center;
+    gap: 0;
+    padding: 0 2px;
+    background: none;
+    font-family: 'Memento Hand', cursive;
+    color: #2b2f55;
+}
+
+.mmt-th-polaroid .mmt-card-title {
+    order: 1;
+    overflow: hidden;
+    font-size: 1.05em;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.mmt-th-polaroid .mmt-card-stars {
+    order: 2;
+    color: color-mix(in srgb, var(--mmt-rar) 70%, #2b2f55);
+    font-size: 0.7em;
+    text-shadow: none;
+}
+
+.mmt-th-polaroid .mmt-pockets-hero .mmt-card { padding: 11px 11px 0; }
+.mmt-th-polaroid .mmt-pockets-hero .mmt-card-img,
+.mmt-th-polaroid .mmt-pockets-hero .mmt-card-blank { height: calc(100% - 62px); }
+.mmt-th-polaroid .mmt-pockets-hero .mmt-card-caption { left: 10px; right: 10px; height: 62px; padding: 0 4px; }
+.mmt-th-polaroid .mmt-pockets-hero .mmt-card-title { font-size: 1.6em; white-space: normal; }
+.mmt-th-polaroid .mmt-pockets-hero .mmt-card-stars { font-size: 0.85em; }
+
+/* 5★: золотая звезда-наклейка */
+.mmt-th-polaroid .mmt-sticker {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    z-index: 3;
+    width: 44px;
+    height: 44px;
+    background: radial-gradient(circle at 35% 30%, #fff3c4, #e8c158 55%, #b88a1c);
+    clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+    pointer-events: none;
+}
+
+/* Рубашка: непроявленный снимок в белой рамке */
+.mmt-th-polaroid .mmt-card.mmt-sealed {
+    padding: 0;
+}
+
+.mmt-th-polaroid .mmt-seal {
+    justify-content: flex-end;
+    gap: 0;
+    padding: 7px 7px 0;
+    background: linear-gradient(180deg, #fbfaf6 0%, #efede6 100%);
+}
+
+.mmt-th-polaroid .mmt-seal::before {
+    display: none;
+}
+
+.mmt-th-polaroid .mmt-film {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    bottom: 42px;
+    left: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(120% 90% at 40% 35%, #4b4436 0%, #2a2620 55%, #17140f 100%);
+}
+
+.mmt-th-polaroid .mmt-film .mmt-seal-mark {
+    font-size: 1.6em;
+    color: color-mix(in srgb, var(--mmt-rar) 55%, transparent);
+    text-shadow: 0 0 16px var(--mmt-rar);
+}
+
+.mmt-th-polaroid .mmt-seal-name {
+    display: flex;
+    align-items: center;
+    height: 42px;
+    font-family: 'Memento Hand', cursive;
+    font-size: 1em;
+    letter-spacing: 0;
+    color: rgba(43, 47, 85, 0.4);
+    opacity: 1;
+}
+
+/* В большом виде рамка пропорционально шире */
+.mmt-th-polaroid .mmt-face-back .mmt-film { top: 16px; right: 16px; bottom: 76px; left: 16px; }
+.mmt-th-polaroid .mmt-face-back .mmt-seal.mmt-seal { padding: 16px 16px 0; }
+.mmt-th-polaroid .mmt-face-back .mmt-seal .mmt-seal-name { height: 76px; font-size: 1.7em; letter-spacing: 0; }
+
+/* Вытягивание = проявка: снимок светлеет */
+.mmt-th-polaroid .mmt-charging .mmt-film {
+    animation: mmt-develop 1.3s ease-in forwards;
+}
+
+@keyframes mmt-develop {
+    from { filter: brightness(1) sepia(0); }
+    to { filter: brightness(2.4) sepia(0.6); }
+}
+
+/* Номера страниц и приписка белым маркером */
+.mmt-th-polaroid .mmt-page-num {
+    font-family: 'Memento Hand', cursive;
+    font-size: 1.05em;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mmt-th-polaroid .mmt-scribble {
+    color: #f6f3ec;
+    font-weight: 700;
+}

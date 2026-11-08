@@ -1,0 +1,307 @@
+/* Memento — тема «Досье».
+   Картонная папка с наклейкой «ДЕЛО №», бланки, фото к делу на скрепках,
+   штампы, красный маркер. */
+
+/* Папка: картон «манила» */
+.mmt-th-dossier.mmt-binder {
+    padding-top: 52px;
+    border-radius: 6px 12px 12px 12px;
+    background:
+        url('../assets/paper.png'),
+        url('../assets/grain.png'),
+        linear-gradient(160deg, #c9a96c 0%, #b8955a 60%, #a3804a 100%);
+    background-size: 192px, 160px, cover;
+    background-blend-mode: multiply, overlay, normal;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 240, 200, 0.4),
+        inset 0 0 40px rgba(90, 60, 20, 0.45),
+        0 24px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Наклейка с номером дела */
+.mmt-th-dossier .mmt-dossier-tab {
+    position: absolute;
+    top: 13px;
+    left: 34px;
+    padding: 4px 16px;
+    font-family: 'Memento Mono', monospace;
+    font-size: 0.85em;
+    letter-spacing: 2px;
+    color: #2e2414;
+    background: #efe6cf;
+    border: 1px solid rgba(80, 60, 20, 0.35);
+    box-shadow: 0 1px 2px rgba(60, 40, 10, 0.3);
+}
+
+/* Листы: бланк в линейку, моноширинный шрифт */
+.mmt-th-dossier .mmt-page {
+    padding-top: 58px;
+    font-family: 'Memento Mono', monospace;
+    color: #2a2a2e;
+    background:
+        repeating-linear-gradient(180deg, transparent 0 27px, rgba(70, 90, 130, 0.13) 27px 28px),
+        url('../assets/paper.png'),
+        linear-gradient(180deg, #f3eee2 0%, #e9e2d0 100%);
+    background-size: auto, 192px, cover;
+    background-blend-mode: normal, multiply, normal;
+}
+
+/* На телефоне общий отступ одиночной страницы перебивает — возвращаем место под поля бланка */
+.mmt-th-dossier.mmt-portrait .mmt-page-left {
+    padding-top: 58px;
+}
+
+.mmt-th-dossier .mmt-page-left {
+    box-shadow: -2px 2px 0 #ddd5c2, -4px 4px 0 #b9ae96;
+}
+
+.mmt-th-dossier .mmt-page-right,
+.mmt-th-dossier.mmt-portrait .mmt-page-left {
+    box-shadow: 2px 2px 0 #ddd5c2, 4px 4px 0 #b9ae96;
+}
+
+/* Сгиб папки посередине */
+.mmt-th-dossier .mmt-fold {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -1px;
+    width: 2px;
+    background: rgba(60, 40, 10, 0.25);
+    box-shadow: 0 0 10px 4px rgba(60, 40, 10, 0.15);
+}
+
+/* Поля бланка */
+.mmt-th-dossier .mmt-field {
+    position: absolute;
+    left: 26px;
+    z-index: 2;
+    max-width: calc(100% - 70px);
+    overflow: hidden;
+    font-size: 0.68em;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #3b3b44;
+}
+
+.mmt-th-dossier .mmt-field u {
+    padding: 0 6px;
+    text-decoration: none;
+    border-bottom: 1px solid #6a6a72;
+}
+
+.mmt-th-dossier .mmt-field-1 { top: 14px; }
+.mmt-th-dossier .mmt-field-2 { top: 33px; }
+.mmt-th-dossier .mmt-page-right .mmt-field,
+.mmt-th-dossier.mmt-portrait .mmt-page-left .mmt-field { left: 42px; }
+
+/* След от кружки */
+.mmt-th-dossier .mmt-stain {
+    position: absolute;
+    top: var(--mmt-stain-y, 40%);
+    right: -34px;
+    width: 120px;
+    height: 120px;
+    border: 6px solid rgba(140, 90, 40, 0.12);
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 2px rgba(140, 90, 40, 0.07);
+    transform: rotate(20deg) scaleY(0.95);
+    pointer-events: none;
+}
+
+/* Фото к делу: отпечаток с белым полем, на скрепке */
+.mmt-th-dossier .mmt-pockets {
+    gap: 26px 22px;
+}
+
+.mmt-th-dossier .mmt-pocket:not(.mmt-filled) {
+    border: 1px dashed rgba(60, 60, 70, 0.25);
+}
+
+.mmt-th-dossier .mmt-pocket:not(.mmt-filled)::after {
+    content: 'ФОТО';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    letter-spacing: 3px;
+    color: rgba(60, 60, 70, 0.3);
+}
+
+.mmt-th-dossier .mmt-pocket.mmt-filled {
+    transform: rotate(calc(var(--mmt-card-tilt, 0deg) * 0.5));
+}
+
+.mmt-th-dossier .mmt-card {
+    inset: 0;
+    padding: 5px;
+    background: #fafafa;
+    border: none;
+    border-radius: 0;
+    box-shadow: 0 3px 8px rgba(40, 30, 10, 0.35);
+}
+
+.mmt-th-dossier .mmt-card:hover,
+.mmt-th-dossier .mmt-card:focus-visible {
+    box-shadow: 0 6px 14px rgba(40, 30, 10, 0.4), 0 0 12px color-mix(in srgb, var(--mmt-rar) 45%, transparent);
+}
+
+.mmt-th-dossier .mmt-card-img,
+.mmt-th-dossier .mmt-card-blank {
+    outline: 2px solid var(--mmt-rar);
+    outline-offset: -2px;
+    filter: sepia(0.15) contrast(1.05);
+}
+
+.mmt-th-dossier .mmt-card-caption {
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    font-family: inherit;
+}
+
+.mmt-th-dossier .mmt-card .mmt-card-title {
+    font-family: 'Memento Mono', monospace;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+}
+
+/* Скрепка */
+.mmt-th-dossier .mmt-clip {
+    position: absolute;
+    top: -17px;
+    z-index: 3;
+    width: 14px;
+    height: 42px;
+    border: 2.5px solid #8d9098;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+.mmt-th-dossier .mmt-clip::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 2px;
+    bottom: 9px;
+    left: 2px;
+    border: 2.5px solid #a7aab2;
+    border-bottom: 0;
+    border-radius: 6px;
+}
+
+.mmt-th-dossier .mmt-clip-left { left: 16px; }
+.mmt-th-dossier .mmt-clip-right { right: 16px; }
+
+/* Номер улики */
+.mmt-th-dossier .mmt-exhibit {
+    position: absolute;
+    top: 10px;
+    z-index: 2;
+    padding: 1px 5px;
+    font-family: 'Memento Mono', monospace;
+    font-size: 0.6em;
+    letter-spacing: 1px;
+    color: #2a2a2e;
+    background: #f3eee2;
+    pointer-events: none;
+}
+
+.mmt-th-dossier .mmt-exhibit-left { left: 10px; }
+.mmt-th-dossier .mmt-exhibit-right { right: 10px; }
+.mmt-th-dossier .mmt-pockets-hero .mmt-exhibit { font-size: 0.72em; }
+
+/* Штамп на странице с 5★ */
+.mmt-th-dossier .mmt-stamp-big {
+    position: absolute;
+    top: 54px;
+    right: 22px;
+    z-index: 4;
+    padding: 3px 10px;
+    font-weight: 700;
+    font-size: 0.85em;
+    letter-spacing: 3px;
+    color: rgba(178, 34, 40, 0.85);
+    border: 3px solid rgba(178, 34, 40, 0.8);
+    transform: rotate(8deg);
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+/* Рубашка: запечатанный конверт со штампом и завязкой */
+.mmt-th-dossier .mmt-seal {
+    background:
+        linear-gradient(to bottom right, transparent 49.5%, rgba(90, 60, 20, 0.28) 50%, transparent 50.6%) top / 100% 58% no-repeat,
+        linear-gradient(to bottom left, transparent 49.5%, rgba(90, 60, 20, 0.28) 50%, transparent 50.6%) top / 100% 58% no-repeat,
+        url('../assets/paper.png'),
+        #c9a96c;
+    background-blend-mode: normal, normal, multiply, normal;
+}
+
+.mmt-th-dossier .mmt-seal::before {
+    display: none;
+}
+
+.mmt-th-dossier .mmt-envelope-tie {
+    position: absolute;
+    top: 64%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-left: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #8a5a2a, #4a2a10);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mmt-th-dossier .mmt-envelope-tie::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 7px;
+    width: 2px;
+    height: 38px;
+    background: #e8dcc0;
+    transform: rotate(18deg);
+    transform-origin: top;
+}
+
+.mmt-th-dossier .mmt-seal-name {
+    position: relative;
+    padding: 3px 10px;
+    font-family: 'Memento Mono', monospace;
+    font-weight: 700;
+    font-size: 0.7em;
+    letter-spacing: 3px;
+    color: rgba(178, 34, 40, 0.85);
+    border: 2.5px solid rgba(178, 34, 40, 0.8);
+    opacity: 1;
+    transform: rotate(-14deg);
+    mix-blend-mode: multiply;
+}
+
+.mmt-sealing .mmt-face-back .mmt-envelope-tie + .mmt-seal-name { font-size: 1.3em; letter-spacing: 6px; }
+
+/* Номера страниц и приписка красным маркером в кружке */
+.mmt-th-dossier .mmt-page-num {
+    font-family: 'Memento Mono', monospace;
+    color: #5a5a62;
+}
+
+.mmt-th-dossier .mmt-scribble {
+    padding: 0.2em 0.75em;
+    font-weight: 700;
+    color: #c4262d;
+    border: 2.5px solid rgba(196, 38, 45, 0.75);
+    border-radius: 50%;
+}
+
+.mmt-th-dossier .mmt-scribble-edit {
+    color: #2a2a2e;
+    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(60, 60, 70, 0.3);
+}

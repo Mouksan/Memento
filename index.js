@@ -10,7 +10,7 @@ import {
 } from './store.js';
 import { drawImage, deleteImageFile, getMissingDrawSetting } from './image.js';
 import { layoutPages, bookPagesHtml, pageIndexOf, starsText, rarityOf } from './album.js';
-import { THEMES, getTheme, effectiveThemeId, bindingHtml } from './themes.js';
+import { THEMES, getTheme, effectiveThemeId, bindingHtml, coverDecorHtml, sealHtml, caseNumber } from './themes.js';
 import { PageFlip } from './lib/page-flip.module.js';
 import { findHearthDate } from './hearth.js';
 import { addSettingsDrawer, ICON } from './settings.js';
@@ -205,14 +205,17 @@ function pageSize() {
 function renderBook(body, album) {
     destroyBook();
     const themeId = effectiveThemeId(album, getSettings());
+    const c = ctx();
+    const info = { charName: c.name2 || '', userName: c.name1 || '', caseNo: caseNumber(currentChatId() || '') };
     const pages = layoutPages(album.cards);
     pageCursor = Math.max(0, Math.min(pageCursor, pages.length - 1));
     const count = album.cards.length;
 
     body.innerHTML = `
         <div class="mmt-binder mmt-th-${themeId}">
+            ${coverDecorHtml(themeId, info)}
             <div class="mmt-book-host">
-                <div class="mmt-book">${bookPagesHtml(pages)}</div>
+                <div class="mmt-book">${bookPagesHtml(pages, { themeId, info })}</div>
                 ${bindingHtml(themeId)}
             </div>
             ${count ? '' : `
@@ -770,10 +773,7 @@ function openCardView(cardId, { waitClick = false } = {}) {
                         </span>
                     </span>
                     <span class="mmt-face mmt-face-back">
-                        <span class="mmt-seal" aria-hidden="true">
-                            <span class="mmt-seal-mark">✦</span>
-                            <span class="mmt-seal-name">MEMENTO</span>
-                        </span>
+                        ${sealHtml(effectiveThemeId(getAlbum(), getSettings()))}
                         ${date ? `<span class="mmt-back-date">${escapeHtml(date)}</span>` : ''}
                         <span class="mmt-back-note">${escapeHtml(card.note || '…')}</span>
                         <span class="mmt-back-title">${escapeHtml(card.title)} ${starsText(card)}</span>

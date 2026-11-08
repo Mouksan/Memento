@@ -1,7 +1,7 @@
 // Memento — раскладка карточек по страницам и вёрстка биндера.
 
 import { escapeHtml } from './store.js';
-import { scribbleSpot, scribbleTilt } from './themes.js';
+import { scribbleSpot, scribbleTilt, cardTilt, sealHtml, holderDecorHtml, pageDecorHtml } from './themes.js';
 
 export const POCKETS_PER_PAGE = 4;   // 3★ и 4★ — сетка 2×2
 
@@ -53,18 +53,15 @@ export function pageIndexOf(pages, cardId) {
     return pages.findIndex((p) => p.cards.some((c) => c.id === cardId));
 }
 
-// Карточка в кармашке. Картинки появятся на этапе 3 — пока вместо неё подложка цвета редкости.
-function cardHtml(card) {
+// Карточка в кармашке.
+function cardHtml(card, themeId) {
     const rarity = rarityOf(card);
     // Запечатанная (ещё не вытянутая): рубашка со свечением редкости, без спойлеров
     if (card.revealed === false) {
         const wait = card.drawStatus === 'drawing' ? '<span class="mmt-card-badge mmt-card-drawing" title="Проявляется"><i class="fa-solid fa-spinner fa-spin"></i></span>' : '';
         return `
             <button type="button" class="mmt-card mmt-r${rarity} mmt-sealed" data-card="${escapeHtml(card.id)}" title="Новое воспоминание">
-                <span class="mmt-seal" aria-hidden="true">
-                    <span class="mmt-seal-mark">✦</span>
-                    <span class="mmt-seal-name">MEMENTO</span>
-                </span>
+                ${sealHtml(themeId)}
                 ${wait}
             </button>`;
     }
@@ -85,8 +82,14 @@ function cardHtml(card) {
         </button>`;
 }
 
-function pocketHtml(card) {
-    return `<div class="mmt-pocket ${card ? 'mmt-filled' : ''}">${card ? cardHtml(card) : ''}</div>`;
+function pocketHtml(card, opts, hero = false) {
+    if (!card) return '<div class="mmt-pocket"></div>';
+    const decor = holderDecorHtml(opts.themeId, card, { hero, exhibit: opts.exhibits.get(card.id) || 0 });
+    return `
+        <div class="mmt-pocket mmt-filled mmt-r${rarityOf(card)}" style="--mmt-card-tilt: ${cardTilt(card.id)}deg;">
+            ${cardHtml(card, opts.themeId)}
+            ${decor}
+        </div>`;
 }
 
 /**
@@ -105,24 +108,33 @@ function scribbleHtml(card) {
         </button>`;
 }
 
-export function pageHtml(page, side, pageNumber) {
+export function pageHtml(page, side, pageNumber, opts) {
     let inner;
     if (page.kind === 'hero') {
-        inner = `<div class="mmt-pockets mmt-pockets-hero">${pocketHtml(page.cards[0])}</div>${scribbleHtml(page.cards[0])}`;
+        inner = `<div class="mmt-pockets mmt-pockets-hero">${pocketHtml(page.cards[0], opts, true)}</div>${scribbleHtml(page.cards[0])}`;
     } else {
         const pockets = [];
-        for (let i = 0; i < POCKETS_PER_PAGE; i++) pockets.push(pocketHtml(page.cards[i]));
+        for (let i = 0; i < POCKETS_PER_PAGE; i++) pockets.push(pocketHtml(page.cards[i], opts));
         inner = `<div class="mmt-pockets mmt-pockets-grid">${pockets.join('')}</div>`;
     }
     return `
-        <div class="mmt-page mmt-page-${side}" data-page="${pageNumber}" data-density="soft">
+        <div class="mmt-page mmt-page-${side} mmt-page-${page.kind}" data-page="${pageNumber}" data-density="soft">
             <div class="mmt-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+            ${pageDecorHtml(opts.themeId, page, side, pageNumber, opts.info)}
             ${inner}
             <div class="mmt-page-num">${pageNumber}</div>
         </div>`;
 }
 
-/** Все страницы книги подряд: чётные — левые, нечётные — правые (листает PageFlip). */
-export function bookPagesHtml(pages) {
-    return pages.map((page, i) => pageHtml(page, i % 2 ? 'right' : 'left', i + 1)).join('');
+/**
+ * Все страницы книги подряд: чётные — левые, нечётные — правые (листает PageFlip).
+ * opts: { themeId, info: { charName, userName, caseNo } }
+ */
+export function bookPagesHtml(pages, opts) {
+    // Номера улик для досье — по порядку карточек в альбоме
+    const exhibits = new Map();
+    let n = 0;
+    for (const page of pages) for (const card of page.cards) exhibits.set(card.id, ++n);
+    const full = { themeId: opts.themeId, info: opts.info || {}, exhibits };
+    return pages.map((page, i) => pageHtml(page, i % 2 ? 'right' : 'left', i + 1, full)).join('');
 }

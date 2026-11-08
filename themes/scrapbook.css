@@ -1,0 +1,183 @@
+/* Memento — тема «Скрапбук».
+   Потёртая кожа, крафтовые страницы, корешок прошит нитками,
+   карточки чуть криво на фотоуголках и скотче. */
+
+/* Обложка: старая кожа, протёртая по краям */
+.mmt-th-scrapbook.mmt-binder {
+    border-radius: 12px;
+    background:
+        radial-gradient(60% 40% at 6% 6%, rgba(220, 170, 120, 0.32), transparent 60%),
+        radial-gradient(50% 35% at 95% 96%, rgba(220, 170, 120, 0.28), transparent 60%),
+        radial-gradient(30% 20% at 97% 6%, rgba(220, 170, 120, 0.22), transparent 70%),
+        url('../assets/leather.png'),
+        url('../assets/grain.png'),
+        linear-gradient(160deg, #6b4a32 0%, #4e331f 55%, #3a2414 100%);
+    background-size: cover, cover, cover, 192px, 160px, cover;
+    background-blend-mode: normal, normal, normal, soft-light, overlay, normal;
+    box-shadow:
+        inset 0 0 40px rgba(20, 8, 0, 0.6),
+        inset 0 0 0 2px rgba(30, 14, 4, 0.5),
+        0 24px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Страницы: крафт с волокнами */
+.mmt-th-scrapbook .mmt-page {
+    color: #3a2414;
+    background:
+        url('../assets/paper.png'),
+        radial-gradient(140% 110% at 50% 10%, #d4b48a 0%, #c19b6c 70%, #a98256 100%);
+    background-size: 192px, cover;
+    background-blend-mode: multiply, normal;
+}
+
+.mmt-th-scrapbook .mmt-page-left {
+    border-radius: 4px 0 0 4px;
+    box-shadow: -2px 2px 0 #b8936a, -4px 4px 0 #8c6a45, inset -40px 0 50px -26px rgba(60, 35, 10, 0.55);
+}
+
+.mmt-th-scrapbook .mmt-page-right,
+.mmt-th-scrapbook.mmt-portrait .mmt-page-left {
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 2px 0 #b8936a, 4px 4px 0 #8c6a45, inset 40px 0 50px -26px rgba(60, 35, 10, 0.55);
+}
+
+/* Корешок: шитьё нитками */
+.mmt-th-scrapbook .mmt-stitch {
+    position: absolute;
+    top: 26px;
+    bottom: 26px;
+    left: -1px;
+    border-left: 2px dashed rgba(240, 220, 190, 0.75);
+    filter: drop-shadow(0 1px 0 rgba(60, 35, 10, 0.6));
+}
+
+/* Карточки без файлов: прямо на бумаге, чуть криво */
+.mmt-th-scrapbook .mmt-pockets {
+    gap: 26px 22px;
+}
+
+.mmt-th-scrapbook .mmt-pocket {
+    border-radius: 2px;
+}
+
+.mmt-th-scrapbook .mmt-pocket:not(.mmt-filled) {
+    border: 1.5px dashed rgba(90, 60, 30, 0.28);
+}
+
+.mmt-th-scrapbook .mmt-pocket.mmt-filled {
+    transform: rotate(var(--mmt-card-tilt, 0deg));
+}
+
+.mmt-th-scrapbook .mmt-card {
+    inset: 0;
+    border-radius: 1px;
+    box-shadow: 0 4px 10px rgba(50, 25, 5, 0.45), 0 1px 2px rgba(50, 25, 5, 0.5);
+}
+
+.mmt-th-scrapbook .mmt-card:hover,
+.mmt-th-scrapbook .mmt-card:focus-visible {
+    box-shadow: 0 8px 16px rgba(50, 25, 5, 0.5), 0 0 12px color-mix(in srgb, var(--mmt-rar) 45%, transparent);
+}
+
+.mmt-th-scrapbook .mmt-card.mmt-r5:not(.mmt-sealed) {
+    border-width: 3px;
+}
+
+/* Фотоуголки */
+.mmt-th-scrapbook .mmt-corner {
+    position: absolute;
+    z-index: 3;
+    width: 22px;
+    height: 22px;
+    background: #2a1a10;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.mmt-th-scrapbook .mmt-corner-tl { top: -5px; left: -5px; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.mmt-th-scrapbook .mmt-corner-tr { top: -5px; right: -5px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.mmt-th-scrapbook .mmt-corner-bl { bottom: -5px; left: -5px; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+.mmt-th-scrapbook .mmt-corner-br { bottom: -5px; right: -5px; clip-path: polygon(100% 0, 0 100%, 100% 100%); }
+
+/* Скотч */
+.mmt-th-scrapbook .mmt-tape {
+    position: absolute;
+    z-index: 3;
+    height: 22px;
+    background: rgba(245, 235, 210, 0.55);
+    box-shadow: 0 1px 2px rgba(60, 35, 10, 0.25);
+    clip-path: polygon(3% 0, 97% 4%, 100% 50%, 96% 100%, 2% 96%, 0 50%);
+    pointer-events: none;
+}
+
+.mmt-th-scrapbook .mmt-tape-top {
+    top: -11px;
+    left: 50%;
+    width: 44%;
+    transform: translateX(-50%) rotate(var(--mmt-tape-tilt, -3deg));
+}
+
+.mmt-th-scrapbook .mmt-tape-diag1 { top: -8px; left: -18px; width: 38%; transform: rotate(-38deg); }
+.mmt-th-scrapbook .mmt-tape-diag2 { bottom: -8px; right: -18px; width: 38%; transform: rotate(-38deg); }
+
+/* Рубашка: крафт со штемпелем */
+.mmt-th-scrapbook .mmt-seal {
+    background:
+        url('../assets/paper.png'),
+        #b08a5c;
+    background-size: 150px, cover;
+    background-blend-mode: multiply, normal;
+}
+
+.mmt-th-scrapbook .mmt-seal::before {
+    display: none;
+}
+
+.mmt-th-scrapbook .mmt-stamp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 64%;
+    aspect-ratio: 1;
+    color: rgba(120, 30, 40, 0.82);
+    border: 3px double rgba(120, 30, 40, 0.75);
+    border-radius: 50%;
+    transform: rotate(-12deg);
+}
+
+.mmt-th-scrapbook .mmt-seal-mark {
+    font-size: 1.6em;
+    text-shadow: none;
+}
+
+.mmt-th-scrapbook .mmt-seal-name {
+    font-size: 0.6em;
+    letter-spacing: 3px;
+    opacity: 1;
+}
+
+.mmt-sealing .mmt-face-back .mmt-stamp .mmt-seal-mark { font-size: 3em; }
+.mmt-sealing .mmt-face-back .mmt-stamp .mmt-seal-name { font-size: 0.95em; }
+
+/* Номера страниц и приписка шариковой ручкой */
+.mmt-th-scrapbook .mmt-page-num {
+    font-family: 'Memento Hand', cursive;
+    font-size: 1.05em;
+    color: rgba(70, 40, 15, 0.75);
+    opacity: 1;
+}
+
+.mmt-th-scrapbook .mmt-page-num::before { content: '— '; }
+.mmt-th-scrapbook .mmt-page-num::after { content: ' —'; }
+
+.mmt-th-scrapbook .mmt-scribble {
+    color: #3c2412;
+}
+
+.mmt-th-scrapbook .mmt-scribble-edit {
+    color: #3c2412;
+    background: rgba(255, 240, 210, 0.5);
+    border-color: rgba(90, 60, 30, 0.35);
+}
