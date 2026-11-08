@@ -862,8 +862,10 @@
     transform: rotateY(180deg);
 }
 
-/* Страховка: голография (mix-blend-mode) ломает браузеру backface-visibility,
-   и лицо просвечивало зеркально на обороте. Прячем невидимую сторону сами — на середине переворота. */
+/* Стороны карточки переключаем сами, на середине переворота, без backface-visibility:
+   голография (mix-blend-mode) заставляет часть браузеров рисовать карточку плоско,
+   и тогда backface-visibility прячет оборот целиком (а без него лицо просвечивает зеркально).
+   Оборот повёрнут на 180° — и в 3D, и в плоском режиме он читается правильно. */
 .mmt-face-front,
 .mmt-face-back {
     transition: visibility 0s linear 0.3s;
@@ -882,8 +884,6 @@
     border: 3px solid var(--mmt-rar);
     border-radius: 12px;
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 24px color-mix(in srgb, var(--mmt-rar) 25%, transparent);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
 }
 
 .mmt-face-front {
