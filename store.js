@@ -39,8 +39,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     styles: [{ id: LADS_STYLE_ID, name: 'Воспоминание LADS', tags: LADS_STYLE, builtIn: true }],
     activeStyleId: LADS_STYLE_ID,
 
-    // Вытягивание открывается само, как только карточка готова (иначе — тост)
-    autoReveal: false,
+    // Новая карточка сразу выплывает над чатом рубашкой вверх (иначе — тост)
+    revealPopup: true,
 
     // Картинки, дорисованные после ухода из чата: { chatId, cardId, image }
     mailbox: [],

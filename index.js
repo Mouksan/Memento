@@ -24,6 +24,7 @@ let overlayEl = null;
 let pageCursor = 0;      // номер текущей страницы
 let view = 'album';      // 'album' | 'scene'
 let viewId = null;       // открытая в большом виде карточка
+let solo = false;        // большой вид над чатом, без окна альбома (новая карточка)
 let book = null;         // PageFlip
 
 function buildWindow() {
@@ -84,7 +85,7 @@ function onKeyDown(e) {
     if (document.querySelector('dialog[open]')) return;   // попап таверны поверх — пусть он сам
     if (e.key === 'Escape') {
         if (isThemeMenuOpen()) closeThemeMenu();
-        else if (viewId) closeCardView();
+        else if (viewId || solo) closeCardView();
         else if (view === 'scene') setView('album');
         else closeWindow();
         return;
@@ -114,10 +115,44 @@ function openWindow(nextView = 'album') {
 function closeWindow() {
     if (!overlayEl) return;
     closeThemeMenu();
+    solo = false;
     closeCardView();
     destroyBook();
-    overlayEl.classList.remove('mmt-open');
+    overlayEl.classList.remove('mmt-open', 'mmt-solo');
     document.removeEventListener('keydown', onKeyDown);
+}
+
+/** Окно альбома видно (не режим «над чатом»). */
+function albumVisible() {
+    return isOpen() && !solo && view === 'album';
+}
+
+/** Новая карточка над чатом: рубашкой вверх, открывается кликом. */
+function openSolo(cardId) {
+    if (!findCard(cardId)) return;
+    if (!overlayEl) overlayEl = buildWindow();
+    if (isOpen() && !solo) {
+        // Альбом уже открыт — вытягиваем прямо в нём
+        openAtCard(cardId);
+        return;
+    }
+    solo = true;
+    overlayEl.classList.add('mmt-open', 'mmt-solo');
+    document.addEventListener('keydown', onKeyDown);
+    openCardView(cardId, { waitClick: true });
+}
+
+/** «В альбом»: из режима над чатом — в окно альбома, на страницу этой карточки. */
+function soloToAlbum(cardId) {
+    const album = getAlbum();
+    if (!album) return;
+    solo = false;
+    overlayEl.classList.remove('mmt-solo');
+    closeCardView();
+    const index = pageIndexOf(layoutPages(album.cards), cardId);
+    if (index >= 0) pageCursor = index;
+    view = 'album';
+    render();
 }
 
 function setView(next) {
@@ -527,8 +562,8 @@ function canDeleteFile(card, path) {
 
 function refreshViews(cardId) {
     if (!isOpen()) return;
-    if (view === 'album') render();
-    if (viewId === cardId) openCardView(cardId);
+    if (albumVisible()) render();
+    if (viewId === cardId) openCardView(cardId, { waitClick: solo });
 }
 
 async function applyImage(card, image) {
@@ -611,14 +646,14 @@ async function drawCard(cardId) {
 
 /** Тост без спойлеров: название и редкость видно только после вытягивания. */
 function announceNew(cardId) {
-    // Сразу в вытягивание — если включено и сейчас не открыта другая карточка
-    if (getSettings().autoReveal && !viewId && !revealingId) {
-        openAtCard(cardId);
+    // Сразу над чатом — если включено и сейчас не открыта другая карточка
+    if (getSettings().revealPopup && !viewId && !revealingId) {
+        openSolo(cardId);
         return;
     }
     toastr.success('Новое воспоминание ждёт в альбоме — нажми, чтобы открыть', TOAST_TITLE, {
         timeOut: 8000,
-        onclick: () => openAtCard(cardId),
+        onclick: () => openSolo(cardId),
     });
 }
 
@@ -690,7 +725,7 @@ function clearReveal() {
     revealingId = null;
 }
 
-function openCardView(cardId) {
+function openCardView(cardId, { waitClick = false } = {}) {
     const card = findCard(cardId);
     if (!card || !overlayEl) return;
     if (revealingId === cardId) return;   // идёт вытягивание — не перебиваем его перерисовкой
@@ -745,7 +780,12 @@ function openCardView(cardId) {
                     </span>
                 </span>
             </button>
-            <div class="mmt-view-side ${sealed ? 'mmt-hidden-side' : ''}">
+            <div class="mmt-view-side ${sealed ? (waitClick ? 'mmt-awaiting-side' : 'mmt-hidden-side') : ''}">
+                <div class="mmt-view-hint">
+                    <div class="mmt-view-hint-title">Новое воспоминание</div>
+                    <div>Нажми на карточку, чтобы открыть.</div>
+                    <div class="mmt-view-hint-sub">Закроешь — она подождёт в альбоме запечатанной.</div>
+                </div>
                 <blockquote class="mmt-view-quote mmt-r${rarity}">${escapeHtml(card.quote)}</blockquote>
                 <div class="mmt-view-meta">${meta}${date ? `<br>${escapeHtml(date)}` : ''}</div>
                 ${card.drawStatus === 'error' ? `<div class="mmt-view-error">${escapeHtml(card.drawError || 'Картинка не нарисовалась')}</div>` : ''}
@@ -754,6 +794,7 @@ function openCardView(cardId) {
                     <button class="mmt-btn" type="button" data-act="jump" ${where >= 0 ? '' : 'disabled'}><i class="fa-solid fa-location-arrow"></i> К моменту</button>
                     <button class="mmt-btn" type="button" data-act="redraw" ${drawing ? 'disabled' : ''}><i class="fa-solid fa-paintbrush"></i> Перерисовать</button>
                     <button class="mmt-btn mmt-btn-danger" type="button" data-act="delete"><i class="fa-solid fa-trash-can"></i> Удалить</button>
+                    ${solo ? '<button class="mmt-btn" type="button" data-act="album"><i class="fa-solid fa-book-open"></i> В альбом</button>' : ''}
                 </div>
             </div>
         </div>`;
@@ -762,10 +803,12 @@ function openCardView(cardId) {
     box.querySelector('.mmt-view-close').addEventListener('click', closeCardView);
     box.querySelector('.mmt-flip').addEventListener('click', () => {
         if (revealingId) finishReveal(true);
+        else if (findCard(cardId)?.revealed === false) startReveal(findCard(cardId));   // ждала клика
         else flipCard();
     });
+    box.querySelector('[data-act="album"]')?.addEventListener('click', () => soloToAlbum(cardId));
     if (rarity === 5) bindHolo(box.querySelector('.mmt-flip'));
-    if (sealed) startReveal(card);
+    if (sealed && !waitClick) startReveal(card);
     box.querySelector('[data-act="flip"]').addEventListener('click', flipCard);
     box.querySelector('[data-act="jump"]').addEventListener('click', () => jumpToMoment(cardId));
     box.querySelector('[data-act="redraw"]').addEventListener('click', () => drawCard(cardId));
@@ -782,6 +825,9 @@ function startReveal(card) {
     clearReveal();
     revealingId = card.id;
     const el = overlayEl.querySelector('.mmt-flip');
+    const side = overlayEl.querySelector('.mmt-view-side');
+    side?.classList.remove('mmt-awaiting-side');
+    side?.classList.add('mmt-hidden-side');
     el.classList.add('mmt-charging');
     revealTimers.push(setTimeout(() => finishReveal(false), REVEAL_CHARGE_MS));
 }
@@ -808,7 +854,7 @@ function finishReveal(skip) {
             card.revealed = true;
             saveAlbumDebounced();
         }
-        if (isOpen() && view === 'album') render();
+        if (albumVisible()) render();
     }, skip ? REVEAL_FLIP_MS / 2 : REVEAL_FLIP_MS));
     revealTimers.push(setTimeout(() => el.classList.remove('mmt-burst'), 2200));
 }
@@ -855,7 +901,7 @@ function closeCardView() {
             saveAlbumDebounced();
         }
         clearReveal();
-        if (isOpen() && view === 'album') render();
+        if (albumVisible()) render();
     }
     viewId = null;
     viewFlipped = false;
@@ -863,6 +909,12 @@ function closeCardView() {
     if (box) {
         box.hidden = true;
         box.innerHTML = '';
+    }
+    // Над чатом закрыть карточку — значит закрыть всё
+    if (solo) {
+        solo = false;
+        overlayEl.classList.remove('mmt-open', 'mmt-solo');
+        document.removeEventListener('keydown', onKeyDown);
     }
 }
 
@@ -960,6 +1012,7 @@ function onChatChanged() {
 
     pageCursor = 0;
     view = 'album';
+    if (solo) closeWindow();
     closeCardView();
     resetCapture();
     addMessageButtons();

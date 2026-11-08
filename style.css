@@ -19,6 +19,15 @@
     display: flex;
 }
 
+/* Новая карточка над чатом: окна альбома нет, только большой вид */
+.mmt-overlay.mmt-solo {
+    background: transparent;
+}
+
+.mmt-overlay.mmt-solo .mmt-window {
+    display: none;
+}
+
 .mmt-window {
     position: relative;
     display: flex;
@@ -369,13 +378,13 @@
 .mmt-scribble {
     position: absolute;
     z-index: 3;
-    max-width: 62%;
+    max-width: 66%;
+    padding: 0.2em 0.45em;       /* воздух: наклон не обрезает края букв и «!» */
     font-family: 'Memento Hand', cursive;
     font-size: 1.55em;
-    line-height: 1.05;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.1;
+    text-align: center;
+    overflow-wrap: anywhere;
     pointer-events: none;
     transform: rotate(var(--mmt-tilt, -3deg));
 }
@@ -1224,6 +1233,37 @@
 .mmt-view-side.mmt-hidden-side {
     opacity: 0;
     pointer-events: none;
+}
+
+/* Подсказка у запечатанной карточки над чатом */
+.mmt-view-hint {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    line-height: 1.45;
+}
+
+.mmt-view-hint-title {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: var(--mmt-rar, var(--SmartThemeQuoteColor));
+}
+
+.mmt-view-hint-sub {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+
+.mmt-awaiting-side .mmt-view-hint {
+    display: flex;
+}
+
+.mmt-awaiting-side > :not(.mmt-view-hint) {
+    display: none;
+}
+
+.mmt-view-side:not(.mmt-awaiting-side) .mmt-view-hint {
+    display: none;
 }
 
 /* Рубашка разгорается */

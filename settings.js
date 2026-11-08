@@ -124,10 +124,10 @@ function drawerHtml() {
         <select id="mmt_default_theme" class="text_pole">${themeOptions}</select>
         <div class="mmt-set-hint">Для чатов, где своя тема не выбрана. Свою выбирают кнопкой с палитрой в шапке альбома.</div>
         <label class="checkbox_label mmt-check">
-            <input type="checkbox" id="mmt_auto_reveal" ${s.autoReveal ? 'checked' : ''}>
-            <span>Открывать вытягивание сразу</span>
+            <input type="checkbox" id="mmt_reveal_popup" ${s.revealPopup ? 'checked' : ''}>
+            <span>Показывать новую карточку сразу</span>
         </label>
-        <div class="mmt-set-hint">Как только картинка готова, альбом сам откроется на новой карточке. Выключено — придёт тост, по клику на него откроется то же самое.</div>`;
+        <div class="mmt-set-hint">Как только картинка готова, карточка выплывает над чатом рубашкой вверх — открыть, посмотреть или закрыть. Выключено — придёт тост, по клику на него то же самое.</div>`;
 
     const jailbreak = `
         <label class="checkbox_label">
@@ -267,8 +267,8 @@ export function addSettingsDrawer(onOpenWindow) {
         getSettings().theme = getTheme(e.target.value).id;
         saveSettings();
     });
-    document.getElementById('mmt_auto_reveal').addEventListener('change', (e) => {
-        getSettings().autoReveal = !!e.target.checked;
+    document.getElementById('mmt_reveal_popup').addEventListener('change', (e) => {
+        getSettings().revealPopup = !!e.target.checked;
         saveSettings();
     });
 
