@@ -16,8 +16,8 @@ export const THEMES = [
     { id: 'silk', name: 'Шёлковая книга', swatch: 'linear-gradient(135deg, #1f5a52 60%, #b8954a 61%)', ready: true },
     { id: 'grimoire', name: 'Гримуар', swatch: 'radial-gradient(circle at 30% 20%, #3e1418, #140406 75%)', ready: true },
     { id: 'wedding', name: 'Свадебный', swatch: 'linear-gradient(135deg, #fbf8f2 60%, #c9a24e 61%)', ready: true },
-    { id: 'deepspace', name: 'Deepspace', swatch: 'conic-gradient(from 120deg, #7af3ff, #a98bff, #ff8fd8, #ffe08a, #7af3ff)', ready: false },
-    { id: 'diary', name: 'Дневничок', swatch: 'linear-gradient(135deg, #f4b8c8, #dccfff)', ready: false },
+    { id: 'deepspace', name: 'Deepspace', swatch: 'conic-gradient(from 120deg, #7af3ff, #a98bff, #ff8fd8, #ffe08a, #7af3ff)', ready: true },
+    { id: 'diary', name: 'Дневничок', swatch: 'linear-gradient(135deg, #f4b8c8, #dccfff)', ready: true },
 ];
 
 export function getTheme(id) {
@@ -74,6 +74,10 @@ export function bindingHtml(themeId) {
     if (themeId === 'dossier') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-fold"></span></div>';
     if (themeId === 'silk' || themeId === 'wedding') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-ribbon"></span></div>';
     if (themeId === 'grimoire') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-gutter"></span></div>';
+    if (themeId === 'deepspace') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-seam"></span></div>';
+    if (themeId === 'diary') {
+        return `<div class="mmt-binding" aria-hidden="true"><span class="mmt-prings">${'<span></span>'.repeat(6)}</span></div>`;
+    }
     return '';
 }
 
@@ -128,6 +132,14 @@ export function sealHtml(themeId) {
         // Чёрная кожа и восковая печать
         return '<span class="mmt-seal" aria-hidden="true"><span class="mmt-wax"><span class="mmt-seal-mark">✦</span></span></span>';
     }
+    if (themeId === 'deepspace') {
+        // Созвездие в голографическом кольце
+        return '<span class="mmt-seal" aria-hidden="true"><span class="mmt-halo"></span><span class="mmt-seal-name">MEMORY</span></span>';
+    }
+    if (themeId === 'diary') {
+        // Пастель в горошек и звезда-наклейка
+        return `<span class="mmt-seal" aria-hidden="true">${STAR_SVG.replace('class="mmt-sticker-svg"', 'class="mmt-sticker-svg mmt-seal-star"')}<span class="mmt-seal-name">memento</span></span>`;
+    }
     if (themeId === 'wedding') {
         // Слоновая кость, монограмма в двойном круге
         return '<span class="mmt-seal" aria-hidden="true"><span class="mmt-mono">M</span><span class="mmt-seal-name">Memento</span></span>';
@@ -140,6 +152,9 @@ export function sealHtml(themeId) {
 }
 
 // ---------- Держатели карточки ----------
+
+const STAR_SVG = '<svg class="mmt-sticker-svg" viewBox="0 0 54 52" aria-hidden="true"><path d="M27 3 L33.5 19 L50.5 19.8 L37.3 30.6 L41.7 47.2 L27 37.8 L12.3 47.2 L16.7 30.6 L3.5 19.8 L20.5 19 Z" fill="#ffd36e" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>';
+const HEART_SVG = '<svg class="mmt-sticker-svg" viewBox="0 0 34 32" aria-hidden="true"><path d="M17 30 C 3 20, 0 12, 4 6 C 8 0, 15 2, 17 8 C 19 2, 26 0, 30 6 C 34 12, 31 20, 17 30 Z" fill="#ff8fb1" stroke="#fff" stroke-width="2.5"/></svg>';
 
 /** Уголки, скотч, скрепка — поверх карточки в кармашке. hero — карточка на своей странице. */
 export function holderDecorHtml(themeId, card, { hero = false, exhibit = 0 } = {}) {
@@ -169,14 +184,30 @@ export function holderDecorHtml(themeId, card, { hero = false, exhibit = 0 } = {
         return `<span class="mmt-cloud mmt-cloud-tl"></span><span class="mmt-cloud mmt-cloud-br"></span>${hanko}`;
     }
     if (themeId === 'grimoire') return '<span class="mmt-slit mmt-slit-tl"></span><span class="mmt-slit mmt-slit-br"></span>';
+    if (themeId === 'deepspace') {
+        // Уголки-скобки цвета редкости; на открытой 5★ — голо-блик
+        const sheen = card.revealed !== false && Number(card.rarity) === 5 ? '<span class="mmt-holo-sheen"></span>' : '';
+        return `<span class="mmt-bracket mmt-bracket-tl"></span><span class="mmt-bracket mmt-bracket-br"></span>${sheen}`;
+    }
+    if (themeId === 'diary') {
+        // Васи-лента одного из четырёх узоров, в одном из трёх положений; иногда — наклейка-сердечко
+        const pattern = 1 + Math.floor(seeded(card.id, 'washi') * 4);
+        const place = hero ? 'top' : ['top', 'left', 'right'][Math.floor(seeded(card.id, 'washi-place') * 3)];
+        const tilt = Math.round(seeded(card.id, 'washi-tilt') * 8 - 4);
+        let sticker = '';
+        if (hero && card.revealed !== false) sticker = `<span class="mmt-sticker mmt-sticker-star">${STAR_SVG}</span>`;
+        else if (!hero && card.revealed !== false && seeded(card.id, 'heart') < 0.3) sticker = `<span class="mmt-sticker mmt-sticker-heart">${HEART_SVG}</span>`;
+        return `<span class="mmt-washi mmt-washi-${place} mmt-washi-w${pattern}" style="--mmt-washi-tilt: ${tilt}deg;"></span>${sticker}`;
+    }
     return '';
 }
 
 // ---------- Украшения страницы ----------
 
 /** Поля бланка в досье, штампы, след от кружки; калька в свадебном. */
-export function pageDecorHtml(themeId, page, side, pageNumber, info) {
+export function pageDecorHtml(themeId, page, side, pageNumber, info, exhibits = new Map()) {
     const heroOpen = page.kind === 'hero' && page.cards[0]?.revealed !== false;
+    if (themeId === 'deepspace') return deepspaceCode(page, exhibits);
     if (themeId === 'wedding') return heroOpen ? '<span class="mmt-vellum" aria-hidden="true"></span>' : '';
     if (themeId !== 'dossier') return '';
     const parts = [];
@@ -193,6 +224,22 @@ export function pageDecorHtml(themeId, page, side, pageNumber, info) {
         parts.push(`<span class="mmt-stain" style="--mmt-stain-y: ${Math.round(seeded(pageNumber, 'sy') * 60 + 15)}%;"></span>`);
     }
     return parts.join('');
+}
+
+/** Бортовой код страницы в Deepspace: «MEMORY · 001—004» или «MEMORY · 005 · ★5». */
+function deepspaceCode(page, exhibits) {
+    const nums = page.cards.map((c) => exhibits.get(c.id)).filter(Boolean);
+    const pad = (n) => String(n).padStart(3, '0');
+    let code = 'MEMORY · ———';
+    if (page.kind === 'hero' && nums.length) {
+        const card = page.cards[0];
+        code = `MEMORY · ${pad(nums[0])}${card.revealed === false ? '' : ` · ★${Number(card.rarity) || 3}`}`;
+    } else if (nums.length === 1) {
+        code = `MEMORY · ${pad(nums[0])}`;
+    } else if (nums.length) {
+        code = `MEMORY · ${pad(nums[0])}—${pad(nums[nums.length - 1])}`;
+    }
+    return `<span class="mmt-code">${code}</span>`;
 }
 
 // ---------- Номера страниц ----------
@@ -218,10 +265,12 @@ function romanNumber(n) {
     return out;
 }
 
-/** Как тема пишет номер страницы: шёлк — 一 二 三, гримуар — I II III, свадебный — i ii iii. */
+/** Как тема пишет номер страницы: шёлк — 一 二 三, гримуар — I II III, свадебный — i ii iii, Deepspace — 01, дневничок — «стр. 1». */
 export function pageLabel(themeId, n) {
     if (themeId === 'silk') return chineseNumber(n);
     if (themeId === 'grimoire') return romanNumber(n);
     if (themeId === 'wedding') return romanNumber(n).toLowerCase();
+    if (themeId === 'deepspace') return String(n).padStart(2, '0');
+    if (themeId === 'diary') return `стр. ${n}`;
     return String(n);
 }

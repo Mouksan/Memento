@@ -1,0 +1,218 @@
+/* Memento — тема «Дневничок».
+   Пастельная клетка-виши, блокнот в клеточку, пластиковые кольца планера,
+   карточки на васи-ленте с наклейками, рубашка — пастель в горошек со звездой. */
+
+/* Обложка */
+.mmt-th-diary.mmt-binder {
+    border-radius: 24px;
+    background:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.45) 0 14px, transparent 14px 28px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.45) 0 14px, transparent 14px 28px),
+        linear-gradient(160deg, #f4b8c8 0%, #eaa3bb 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -20px 40px rgba(170, 80, 110, 0.2),
+        0 24px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Страницы: блокнот в клеточку */
+.mmt-th-diary .mmt-page {
+    color: #5a3a4a;
+    background:
+        linear-gradient(rgba(150, 170, 220, 0.25) 1px, transparent 1px) 0 0 / 22px 22px,
+        linear-gradient(90deg, rgba(150, 170, 220, 0.25) 1px, transparent 1px) 0 0 / 22px 22px,
+        #fffaf6;
+}
+
+.mmt-th-diary .mmt-page-left {
+    border-radius: 10px 0 0 10px;
+    box-shadow: -2px 2px 0 #f1e6e0, -4px 4px 0 #dccbc3;
+}
+
+.mmt-th-diary .mmt-page-right,
+.mmt-th-diary.mmt-portrait .mmt-page-left {
+    border-radius: 0 10px 10px 0;
+    box-shadow: 2px 2px 0 #f1e6e0, 4px 4px 0 #dccbc3;
+}
+
+/* Кольца планера: пастельный пластик, шесть штук */
+.mmt-th-diary .mmt-prings {
+    position: absolute;
+    top: 40px;
+    bottom: 40px;
+    left: -22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 44px;
+}
+
+.mmt-th-diary .mmt-prings span {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #fff 0%, #cfe4ff 35%, #97b8e6 70%, #e6f0ff 100%);
+    box-shadow: 0 3px 4px rgba(80, 90, 140, 0.35);
+}
+
+/* Карточки: белая кайма, контур редкости, чуть криво */
+.mmt-th-diary .mmt-pockets {
+    gap: 30px 24px;
+}
+
+.mmt-th-diary .mmt-pocket:not(.mmt-filled) {
+    border: 2px dashed rgba(212, 138, 166, 0.35);
+    border-radius: 8px;
+}
+
+.mmt-th-diary .mmt-pocket.mmt-filled {
+    transform: rotate(var(--mmt-card-tilt, 0deg));
+}
+
+.mmt-th-diary .mmt-card {
+    inset: 0;
+    border: 3px solid #fff;
+    border-radius: 2px;
+    outline: 2px solid var(--mmt-rar);
+    box-shadow: 0 4px 10px rgba(120, 70, 100, 0.3);
+}
+
+.mmt-th-diary .mmt-card:hover,
+.mmt-th-diary .mmt-card:focus-visible {
+    box-shadow: 0 6px 14px rgba(120, 70, 100, 0.35), 0 0 16px color-mix(in srgb, var(--mmt-rar) 60%, transparent);
+}
+
+.mmt-th-diary .mmt-card-caption {
+    background: linear-gradient(transparent, rgba(40, 18, 34, 0.82) 55%);
+}
+
+/* Васи-лента */
+.mmt-th-diary .mmt-washi {
+    position: absolute;
+    z-index: 3;
+    height: 20px;
+    opacity: 0.92;
+    clip-path: polygon(0 0, 100% 0, 97% 50%, 100% 100%, 0 100%, 3% 50%);
+    pointer-events: none;
+}
+
+.mmt-th-diary .mmt-washi-w1 { background: repeating-linear-gradient(45deg, #ffd1dc 0 6px, #fff 6px 12px); }
+.mmt-th-diary .mmt-washi-w2 { background: repeating-linear-gradient(90deg, #cde8d8 0 8px, #e8f6ee 8px 16px); }
+.mmt-th-diary .mmt-washi-w3 { background: radial-gradient(circle, #ffe08a 2px, transparent 2.5px) 0 0 / 10px 10px, #fff6d9; }
+.mmt-th-diary .mmt-washi-w4 { background: repeating-linear-gradient(-45deg, #d9ccff 0 5px, #f3efff 5px 10px); }
+
+.mmt-th-diary .mmt-washi-top {
+    top: -10px;
+    left: 50%;
+    width: 52%;
+    transform: translateX(-50%) rotate(var(--mmt-washi-tilt, -3deg));
+}
+
+.mmt-th-diary .mmt-washi-left {
+    top: -6px;
+    left: -16px;
+    width: 46%;
+    transform: rotate(-35deg);
+}
+
+.mmt-th-diary .mmt-washi-right {
+    top: -6px;
+    right: -16px;
+    width: 46%;
+    transform: rotate(32deg);
+}
+
+/* Наклейки */
+.mmt-th-diary .mmt-sticker {
+    position: absolute;
+    z-index: 4;
+    display: block;
+    filter: drop-shadow(0 2px 2px rgba(120, 60, 90, 0.35));
+    pointer-events: none;
+}
+
+.mmt-th-diary .mmt-sticker svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.mmt-th-diary .mmt-sticker-heart {
+    right: -14px;
+    bottom: 22%;
+    width: 30px;
+    height: 28px;
+    transform: rotate(12deg);
+}
+
+.mmt-th-diary .mmt-sticker-star {
+    top: 44%;
+    left: -20px;
+    width: 42px;
+    height: 40px;
+    transform: rotate(-10deg);
+}
+
+/* Рубашка: пастель в горошек и звезда-наклейка */
+.mmt-th-diary .mmt-card.mmt-sealed {
+    background: #ffd6e2;
+}
+
+.mmt-th-diary .mmt-seal {
+    gap: 4px;
+    background:
+        radial-gradient(circle, rgba(255, 255, 255, 0.7) 1.5px, transparent 2px) 0 0 / 14px 14px,
+        linear-gradient(160deg, #ffd6e2, #dccfff);
+}
+
+.mmt-th-diary .mmt-seal::before {
+    display: none;
+}
+
+.mmt-th-diary .mmt-seal-star {
+    width: 40%;
+    height: auto;
+    filter: drop-shadow(0 2px 2px rgba(120, 60, 90, 0.3));
+}
+
+.mmt-th-diary .mmt-seal .mmt-seal-name {
+    font-family: 'Memento Hand', cursive;
+    font-weight: 700;
+    font-size: 1.15em;
+    letter-spacing: 0;
+    color: #8a5cc8;
+    opacity: 1;
+}
+
+.mmt-th-diary .mmt-face-back .mmt-seal .mmt-seal-name {
+    font-size: 2.2em;
+    letter-spacing: 0;
+}
+
+/* Вытягивание: звезда подпрыгивает */
+.mmt-th-diary .mmt-charging .mmt-seal-star {
+    animation: mmt-star-bounce 0.42s ease-in-out infinite alternate;
+}
+
+@keyframes mmt-star-bounce {
+    from { transform: translateY(0) rotate(-6deg) scale(1); }
+    to { transform: translateY(-8%) rotate(8deg) scale(1.12); }
+}
+
+/* Номера страниц и приписка розовой ручкой */
+.mmt-th-diary .mmt-page-num {
+    font-family: 'Memento Hand', cursive;
+    font-size: 1.1em;
+    color: #d48aa6;
+    opacity: 1;
+}
+
+.mmt-th-diary .mmt-scribble {
+    font-weight: 700;
+    color: #c0567e;
+}
+
+.mmt-th-diary .mmt-scribble-edit {
+    color: #c0567e;
+    background: rgba(255, 245, 248, 0.8);
+    border-color: rgba(212, 138, 166, 0.45);
+}

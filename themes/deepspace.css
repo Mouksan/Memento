@@ -1,0 +1,236 @@
+/* Memento — тема «Deepspace».
+   Тёмное стекло со звёздной пылью и голографической кромкой, панели-страницы с тонкой сеткой,
+   светящийся шов, карточки в голо-рамках со скобками, бортовые коды, рубашка — созвездие в голо-кольце. */
+
+/* Свои цвета редкости — чуть холоднее и ярче */
+.mmt-th-deepspace .mmt-r3 { --mmt-rar: #7ab8ff; }
+.mmt-th-deepspace .mmt-r4 { --mmt-rar: #b48cff; }
+.mmt-th-deepspace .mmt-r5 { --mmt-rar: #ffd77a; }
+
+/* Корпус */
+.mmt-th-deepspace.mmt-binder {
+    border-radius: 22px;
+    background:
+        radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent),
+        radial-gradient(1px 1px at 33% 72%, #cfe3ff, transparent),
+        radial-gradient(1.4px 1.4px at 58% 12%, #fff, transparent),
+        radial-gradient(1px 1px at 78% 64%, #e6d6ff, transparent),
+        radial-gradient(1.2px 1.2px at 91% 30%, #fff, transparent),
+        radial-gradient(1px 1px at 46% 92%, #cfe3ff, transparent),
+        radial-gradient(1px 1px at 4% 55%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 66% 97%, #e6d6ff, transparent),
+        radial-gradient(70% 60% at 80% 10%, rgba(120, 90, 220, 0.35), transparent 70%),
+        radial-gradient(60% 60% at 10% 90%, rgba(40, 140, 200, 0.28), transparent 70%),
+        linear-gradient(160deg, #0c1024 0%, #070914 100%);
+    box-shadow:
+        inset 0 0 60px rgba(0, 0, 0, 0.7),
+        0 24px 50px rgba(0, 0, 0, 0.7),
+        0 0 40px rgba(120, 140, 255, 0.15);
+}
+
+/* Голографическая кромка */
+.mmt-th-deepspace.mmt-binder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: conic-gradient(from 120deg, #7af3ff, #a98bff, #ff8fd8, #ffe08a, #7af3ff);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+/* Панели: стекло с тонкой сеткой */
+.mmt-th-deepspace .mmt-page {
+    padding-top: 34px;
+    color: #eef4ff;
+    background:
+        linear-gradient(rgba(120, 200, 255, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(90deg, rgba(120, 200, 255, 0.06) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(160deg, #182040, #0c1024);
+    border: 1px solid rgba(140, 200, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.mmt-th-deepspace .mmt-page-left {
+    border-right: 0;
+    border-radius: 10px 0 0 10px;
+}
+
+.mmt-th-deepspace .mmt-page-right {
+    border-left: 0;
+    border-radius: 0 10px 10px 0;
+}
+
+.mmt-th-deepspace.mmt-portrait .mmt-page-left {
+    border: 1px solid rgba(140, 200, 255, 0.22);
+    border-radius: 10px;
+}
+
+.mmt-th-deepspace.mmt-portrait .mmt-page {
+    padding-top: 34px;
+}
+
+/* Светящийся шов между панелями */
+.mmt-th-deepspace .mmt-seam {
+    position: absolute;
+    top: 16px;
+    bottom: 16px;
+    left: -1px;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, #7af3ff 20%, #a98bff 50%, #ff8fd8 80%, transparent);
+    box-shadow: 0 0 10px #7af3ff, 0 0 22px rgba(169, 139, 255, 0.7);
+}
+
+/* Бортовой код страницы */
+.mmt-th-deepspace .mmt-code {
+    position: absolute;
+    top: 12px;
+    z-index: 2;
+    font-family: 'Memento Tech', sans-serif;
+    font-size: 0.66em;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    color: rgba(140, 210, 255, 0.6);
+}
+
+.mmt-th-deepspace .mmt-page-left .mmt-code { left: 24px; }
+.mmt-th-deepspace .mmt-page-right .mmt-code,
+.mmt-th-deepspace.mmt-portrait .mmt-page-left .mmt-code { right: 44px; left: auto; }
+
+/* Карточка в голо-раме со скобками */
+.mmt-th-deepspace .mmt-pockets {
+    gap: 16px;
+}
+
+.mmt-th-deepspace .mmt-pocket:not(.mmt-filled) {
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgba(140, 200, 255, 0.14);
+}
+
+.mmt-th-deepspace .mmt-card {
+    inset: 6px;
+    border: none;
+    border-radius: 6px;
+    background: #050710;
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--mmt-rar) 70%, transparent),
+        0 0 18px color-mix(in srgb, var(--mmt-rar) 35%, transparent);
+}
+
+.mmt-th-deepspace .mmt-pockets-hero .mmt-card {
+    inset: 8px;
+}
+
+.mmt-th-deepspace .mmt-card:hover,
+.mmt-th-deepspace .mmt-card:focus-visible {
+    box-shadow:
+        0 0 0 1px var(--mmt-rar),
+        0 0 26px color-mix(in srgb, var(--mmt-rar) 60%, transparent);
+}
+
+.mmt-th-deepspace .mmt-card-caption {
+    color: #eef4ff;
+    background: linear-gradient(transparent, rgba(4, 6, 20, 0.9) 55%);
+}
+
+.mmt-th-deepspace .mmt-bracket {
+    position: absolute;
+    z-index: 3;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--mmt-rar);
+    filter: drop-shadow(0 0 4px var(--mmt-rar));
+    pointer-events: none;
+}
+
+.mmt-th-deepspace .mmt-bracket-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+.mmt-th-deepspace .mmt-bracket-br { right: 0; bottom: 0; border-top: 0; border-left: 0; }
+
+/* Голо-блик на открытой 5★ */
+.mmt-th-deepspace .mmt-holo-sheen {
+    position: absolute;
+    inset: 8px;
+    z-index: 2;
+    border-radius: 6px;
+    background: linear-gradient(120deg,
+        transparent 30%,
+        rgba(255, 120, 200, 0.16) 40%,
+        rgba(255, 230, 120, 0.18) 47%,
+        rgba(120, 255, 220, 0.15) 54%,
+        rgba(120, 180, 255, 0.16) 61%,
+        transparent 70%);
+    pointer-events: none;
+}
+
+.mmt-th-deepspace .mmt-pockets-grid .mmt-holo-sheen { inset: 6px; }
+
+/* Рубашка: созвездие в голографическом кольце */
+.mmt-th-deepspace .mmt-seal {
+    gap: 10px;
+    background:
+        radial-gradient(1px 1px at 20% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 70% 30%, #fff, transparent),
+        radial-gradient(1px 1px at 35% 75%, #cfe3ff, transparent),
+        radial-gradient(1px 1px at 80% 80%, #fff, transparent),
+        radial-gradient(1px 1px at 55% 15%, #e6d6ff, transparent),
+        radial-gradient(1px 1px at 12% 60%, #fff, transparent),
+        radial-gradient(circle at 50% 45%, #1d1a4a 0%, #070914 72%);
+}
+
+.mmt-th-deepspace .mmt-seal::before {
+    display: none;
+}
+
+.mmt-th-deepspace .mmt-halo {
+    width: 44%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: conic-gradient(#7af3ff, #a98bff, #ff8fd8, #ffe08a, #7af3ff);
+    -webkit-mask: radial-gradient(circle closest-side, transparent 90%, #000 92%);
+    mask: radial-gradient(circle closest-side, transparent 90%, #000 92%);
+    filter: drop-shadow(0 0 8px rgba(169, 139, 255, 0.9));
+}
+
+.mmt-th-deepspace .mmt-seal .mmt-seal-name {
+    font-family: 'Memento Tech', sans-serif;
+    font-size: 0.62em;
+    letter-spacing: 5px;
+    color: #bfe6ff;
+    opacity: 1;
+}
+
+.mmt-th-deepspace .mmt-face-back .mmt-seal .mmt-seal-name {
+    font-size: 1.1em;
+    letter-spacing: 9px;
+}
+
+/* Вытягивание: кольцо раскручивается */
+.mmt-th-deepspace .mmt-charging .mmt-halo {
+    animation: mmt-halo-spin 1.3s ease-in forwards;
+}
+
+@keyframes mmt-halo-spin {
+    to { transform: rotate(540deg) scale(1.15); filter: drop-shadow(0 0 18px rgba(169, 139, 255, 1)); }
+}
+
+/* Номера страниц и приписка неоном */
+.mmt-th-deepspace .mmt-page-num {
+    font-family: 'Memento Tech', sans-serif;
+    letter-spacing: 2px;
+    color: rgba(140, 210, 255, 0.6);
+    opacity: 1;
+}
+
+.mmt-th-deepspace .mmt-scribble {
+    color: #e4f6ff;
+    text-shadow: 0 0 6px rgba(122, 243, 255, 0.8), 0 0 14px rgba(169, 139, 255, 0.6);
+}
+
+.mmt-th-deepspace .mmt-scribble-edit {
+    color: #bfe6ff;
+    border-color: rgba(140, 200, 255, 0.35);
+}

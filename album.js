@@ -120,7 +120,7 @@ export function pageHtml(page, side, pageNumber, opts) {
     return `
         <div class="mmt-page mmt-page-${side} mmt-page-${page.kind}" data-page="${pageNumber}" data-density="soft">
             <div class="mmt-holes" aria-hidden="true"><span></span><span></span><span></span></div>
-            ${pageDecorHtml(opts.themeId, page, side, pageNumber, opts.info)}
+            ${pageDecorHtml(opts.themeId, page, side, pageNumber, opts.info, opts.exhibits)}
             ${inner}
             <div class="mmt-page-num">${pageLabel(opts.themeId, pageNumber)}</div>
         </div>`;
