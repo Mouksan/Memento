@@ -116,6 +116,13 @@ function drawerHtml() {
         <input type="file" id="mmt_style_import_file" accept="application/json,.json" hidden>
         <div class="mmt-set-hint">Текст стиля уходит в начало промпта для бананы.</div>`;
 
+    const album = `
+        <label class="checkbox_label mmt-check">
+            <input type="checkbox" id="mmt_auto_reveal" ${s.autoReveal ? 'checked' : ''}>
+            <span>Открывать вытягивание сразу</span>
+        </label>
+        <div class="mmt-set-hint">Как только картинка готова, альбом сам откроется на новой карточке. Выключено — придёт тост, по клику на него откроется то же самое.</div>`;
+
     const jailbreak = `
         <label class="checkbox_label">
             <input type="checkbox" id="mmt_jb_enabled" ${s.jailbreakEnabled ? 'checked' : ''}>
@@ -147,6 +154,7 @@ function drawerHtml() {
                         <i class="fa-solid ${ICON}"></i>
                         <span>Открыть альбом</span>
                     </button>
+                    ${categoryHtml('fa-book-open', 'Альбом', album)}
                     ${categoryHtml('fa-plug', 'Модель для карточек', model)}
                     ${categoryHtml('fa-paintbrush', 'Рисование', draw)}
                     ${categoryHtml('fa-palette', 'Стили', styles)}
@@ -248,6 +256,11 @@ export function addSettingsDrawer(onOpenWindow) {
         saveSettings();
     });
     bindText('mmt_jb_text', 'jailbreakText');
+
+    document.getElementById('mmt_auto_reveal').addEventListener('change', (e) => {
+        getSettings().autoReveal = !!e.target.checked;
+        saveSettings();
+    });
 
     bindDrawSettings();
     bindStyles();

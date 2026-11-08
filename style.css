@@ -862,6 +862,18 @@
     transform: rotateY(180deg);
 }
 
+/* Страховка: голография (mix-blend-mode) ломает браузеру backface-visibility,
+   и лицо просвечивало зеркально на обороте. Прячем невидимую сторону сами — на середине переворота. */
+.mmt-face-front,
+.mmt-face-back {
+    transition: visibility 0s linear 0.3s;
+}
+
+.mmt-flipped .mmt-face-front,
+.mmt-flip:not(.mmt-flipped) .mmt-face-back {
+    visibility: hidden;
+}
+
 .mmt-face {
     position: absolute;
     inset: 0;

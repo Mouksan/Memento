@@ -514,6 +514,11 @@ async function drawCard(cardId) {
 
 /** Тост без спойлеров: название и редкость видно только после вытягивания. */
 function announceNew(cardId) {
+    // Сразу в вытягивание — если включено и сейчас не открыта другая карточка
+    if (getSettings().autoReveal && !viewId && !revealingId) {
+        openAtCard(cardId);
+        return;
+    }
     toastr.success('Новое воспоминание ждёт в альбоме — нажми, чтобы открыть', TOAST_TITLE, {
         timeOut: 8000,
         onclick: () => openAtCard(cardId),
