@@ -80,18 +80,34 @@ function isOpen() {
     return Boolean(overlayEl && overlayEl.classList.contains('mmt-open'));
 }
 
+// Клавиши ловим на window в фазе перехвата — раньше таверны, и дальше не пускаем:
+// иначе стрелки заодно листают свайпы на фоне, а на последнем запускают генерацию.
+const OWN_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Escape'];
+
+function swallow(e, prevent = true) {
+    e.stopImmediatePropagation();
+    if (prevent) e.preventDefault();
+}
+
 function onKeyDown(e) {
     if (!isOpen()) return;
     if (document.querySelector('dialog[open]')) return;   // попап таверны поверх — пусть он сам
     if (e.key === 'Escape') {
+        swallow(e);
         if (isThemeMenuOpen()) closeThemeMenu();
         else if (viewId || solo) closeCardView();
         else if (view === 'scene') setView('album');
         else closeWindow();
         return;
     }
-    if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    const inField = e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]');
+    if (inField) {
+        // В поле ввода стрелки двигают курсор как обычно, просто таверна их не видит
+        if (OWN_KEYS.includes(e.key)) swallow(e, false);
+        return;
+    }
     if (viewId) {
+        if (OWN_KEYS.includes(e.key)) swallow(e);
         if (e.key === ' ' || e.key === 'Enter') {
             if (e.target instanceof Element && e.target.closest('button:not(.mmt-flip)')) return;
             e.preventDefault();
@@ -99,15 +115,23 @@ function onKeyDown(e) {
         }
         return;
     }
+    if (!OWN_KEYS.includes(e.key)) return;
+    // Стрелки вверх-вниз не трогаем по умолчанию: пусть прокручивают списки в окне
+    swallow(e, e.key === 'ArrowLeft' || e.key === 'ArrowRight');
     if (view !== 'album') return;
     if (e.key === 'ArrowLeft') turn(-1);
     else if (e.key === 'ArrowRight') turn(1);
 }
 
+function listenKeys(on) {
+    if (on) window.addEventListener('keydown', onKeyDown, true);
+    else window.removeEventListener('keydown', onKeyDown, true);
+}
+
 function openWindow(nextView = 'album') {
     if (!overlayEl) overlayEl = buildWindow();
     overlayEl.classList.add('mmt-open');
-    document.addEventListener('keydown', onKeyDown);
+    listenKeys(true);
     view = nextView;
     render();
 }
@@ -119,7 +143,7 @@ function closeWindow() {
     closeCardView();
     destroyBook();
     overlayEl.classList.remove('mmt-open', 'mmt-solo');
-    document.removeEventListener('keydown', onKeyDown);
+    listenKeys(false);
 }
 
 /** Окно альбома видно (не режим «над чатом»). */
@@ -138,7 +162,7 @@ function openSolo(cardId) {
     }
     solo = true;
     overlayEl.classList.add('mmt-open', 'mmt-solo');
-    document.addEventListener('keydown', onKeyDown);
+    listenKeys(true);
     openCardView(cardId, { waitClick: true });
 }
 
@@ -914,7 +938,7 @@ function closeCardView() {
     if (solo) {
         solo = false;
         overlayEl.classList.remove('mmt-open', 'mmt-solo');
-        document.removeEventListener('keydown', onKeyDown);
+        listenKeys(false);
     }
 }
 
