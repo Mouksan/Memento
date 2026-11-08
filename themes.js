@@ -13,9 +13,9 @@ export const THEMES = [
     { id: 'scrapbook', name: 'Скрапбук', swatch: 'linear-gradient(135deg, #c19b6c 50%, #4e331f 51%)', ready: true },
     { id: 'polaroid', name: 'Полароид', swatch: 'linear-gradient(135deg, #fbfaf6 45%, #1d1d20 46%)', ready: true },
     { id: 'dossier', name: 'Досье', swatch: 'linear-gradient(135deg, #d2b47a 60%, #b2222a 61%)', ready: true },
-    { id: 'silk', name: 'Шёлковая книга', swatch: 'linear-gradient(135deg, #1f5a52 60%, #b8954a 61%)', ready: false },
-    { id: 'grimoire', name: 'Гримуар', swatch: 'radial-gradient(circle at 30% 20%, #3e1418, #140406 75%)', ready: false },
-    { id: 'wedding', name: 'Свадебный', swatch: 'linear-gradient(135deg, #fbf8f2 60%, #c9a24e 61%)', ready: false },
+    { id: 'silk', name: 'Шёлковая книга', swatch: 'linear-gradient(135deg, #1f5a52 60%, #b8954a 61%)', ready: true },
+    { id: 'grimoire', name: 'Гримуар', swatch: 'radial-gradient(circle at 30% 20%, #3e1418, #140406 75%)', ready: true },
+    { id: 'wedding', name: 'Свадебный', swatch: 'linear-gradient(135deg, #fbf8f2 60%, #c9a24e 61%)', ready: true },
     { id: 'deepspace', name: 'Deepspace', swatch: 'conic-gradient(from 120deg, #7af3ff, #a98bff, #ff8fd8, #ffe08a, #7af3ff)', ready: false },
     { id: 'diary', name: 'Дневничок', swatch: 'linear-gradient(135deg, #f4b8c8, #dccfff)', ready: false },
 ];
@@ -72,6 +72,8 @@ export function bindingHtml(themeId) {
     if (themeId === 'scrapbook') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-stitch"></span></div>';
     if (themeId === 'polaroid') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-spiral"></span></div>';
     if (themeId === 'dossier') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-fold"></span></div>';
+    if (themeId === 'silk' || themeId === 'wedding') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-ribbon"></span></div>';
+    if (themeId === 'grimoire') return '<div class="mmt-binding" aria-hidden="true"><span class="mmt-gutter"></span></div>';
     return '';
 }
 
@@ -85,6 +87,12 @@ export function caseNumber(chatId) {
 export function coverDecorHtml(themeId, info) {
     if (themeId === 'dossier') {
         return `<span class="mmt-dossier-tab">ДЕЛО № ${escapeHtml(info.caseNo)}</span>`;
+    }
+    if (themeId === 'grimoire') {
+        // Кованые уголки и застёжка
+        return '<span class="mmt-iron mmt-iron-tl" aria-hidden="true"></span><span class="mmt-iron mmt-iron-tr" aria-hidden="true"></span>'
+            + '<span class="mmt-iron mmt-iron-bl" aria-hidden="true"></span><span class="mmt-iron mmt-iron-br" aria-hidden="true"></span>'
+            + '<span class="mmt-clasp" aria-hidden="true"></span>';
     }
     return '';
 }
@@ -111,6 +119,18 @@ export function sealHtml(themeId) {
                 <span class="mmt-envelope-tie"></span>
                 <span class="mmt-seal-name">СЕКРЕТНО</span>
             </span>`;
+    }
+    if (themeId === 'silk') {
+        // Красный лак с иероглифом «память»
+        return '<span class="mmt-seal" aria-hidden="true"><span class="mmt-seal-mark mmt-glyph">忆</span></span>';
+    }
+    if (themeId === 'grimoire') {
+        // Чёрная кожа и восковая печать
+        return '<span class="mmt-seal" aria-hidden="true"><span class="mmt-wax"><span class="mmt-seal-mark">✦</span></span></span>';
+    }
+    if (themeId === 'wedding') {
+        // Слоновая кость, монограмма в двойном круге
+        return '<span class="mmt-seal" aria-hidden="true"><span class="mmt-mono">M</span><span class="mmt-seal-name">Memento</span></span>';
     }
     return `
         <span class="mmt-seal" aria-hidden="true">
@@ -143,13 +163,21 @@ export function holderDecorHtml(themeId, card, { hero = false, exhibit = 0 } = {
         const label = card.revealed === false ? '' : `<span class="mmt-exhibit mmt-exhibit-${labelSide}">${hero ? 'ВЕЩДОК ' : ''}№${exhibit}</span>`;
         return `<span class="mmt-clip mmt-clip-${side}"></span>${label}`;
     }
+    if (themeId === 'silk') {
+        // Облачные уголки паспарту; на 5★ — красная печать-ханко на углу
+        const hanko = hero && card.revealed !== false ? '<span class="mmt-hanko">忆</span>' : '';
+        return `<span class="mmt-cloud mmt-cloud-tl"></span><span class="mmt-cloud mmt-cloud-br"></span>${hanko}`;
+    }
+    if (themeId === 'grimoire') return '<span class="mmt-slit mmt-slit-tl"></span><span class="mmt-slit mmt-slit-br"></span>';
     return '';
 }
 
 // ---------- Украшения страницы ----------
 
-/** Поля бланка в досье, штампы, след от кружки. */
+/** Поля бланка в досье, штампы, след от кружки; калька в свадебном. */
 export function pageDecorHtml(themeId, page, side, pageNumber, info) {
+    const heroOpen = page.kind === 'hero' && page.cards[0]?.revealed !== false;
+    if (themeId === 'wedding') return heroOpen ? '<span class="mmt-vellum" aria-hidden="true"></span>' : '';
     if (themeId !== 'dossier') return '';
     const parts = [];
     if (side === 'left') {
@@ -158,11 +186,42 @@ export function pageDecorHtml(themeId, page, side, pageNumber, info) {
     } else {
         parts.push(`<span class="mmt-field mmt-field-1">ДЕЛО № ${escapeHtml(info.caseNo)} · ЛИСТ ${pageNumber}</span>`);
     }
-    if (page.kind === 'hero' && page.cards[0]?.revealed !== false) {
+    if (heroOpen) {
         parts.push('<span class="mmt-stamp-big">СОВ. СЕКРЕТНО</span>');
     }
     if (seeded(`${info.caseNo}-${pageNumber}`, 'stain') < 0.35) {
         parts.push(`<span class="mmt-stain" style="--mmt-stain-y: ${Math.round(seeded(pageNumber, 'sy') * 60 + 15)}%;"></span>`);
     }
     return parts.join('');
+}
+
+// ---------- Номера страниц ----------
+
+const CN_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+/** 1…99 китайскими цифрами; дальше — арабскими (в шрифте нет «百» с «零»). */
+function chineseNumber(n) {
+    if (n < 1 || n > 99) return String(n);
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    if (!tens) return CN_DIGITS[ones];
+    return `${tens > 1 ? CN_DIGITS[tens] : ''}十${CN_DIGITS[ones]}`;
+}
+
+function romanNumber(n) {
+    if (n < 1 || n > 3999) return String(n);
+    const map = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+    let out = '';
+    for (const [value, sign] of map) {
+        while (n >= value) { out += sign; n -= value; }
+    }
+    return out;
+}
+
+/** Как тема пишет номер страницы: шёлк — 一 二 三, гримуар — I II III, свадебный — i ii iii. */
+export function pageLabel(themeId, n) {
+    if (themeId === 'silk') return chineseNumber(n);
+    if (themeId === 'grimoire') return romanNumber(n);
+    if (themeId === 'wedding') return romanNumber(n).toLowerCase();
+    return String(n);
 }

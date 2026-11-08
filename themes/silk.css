@@ -1,0 +1,184 @@
+/* Memento — тема «Шёлковая книга».
+   Нефритовый шёлк с облачным узором и золотой каймой, рисовая бумага с тушью гор,
+   красная лента-закладка, карточки на паспарту, рубашка — красный лак с иероглифом «память». */
+
+/* Переплёт */
+.mmt-th-silk.mmt-binder {
+    border-radius: 6px;
+    background:
+        radial-gradient(circle at 20px 20px, transparent 9px, rgba(214, 186, 112, 0.14) 9.5px 10.5px, transparent 11px) 0 0 / 40px 40px,
+        radial-gradient(circle at 0 0, transparent 9px, rgba(214, 186, 112, 0.1) 9.5px 10.5px, transparent 11px) 0 0 / 40px 40px,
+        linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.07) 45%, transparent 60%),
+        url('../assets/grain.png'),
+        linear-gradient(160deg, #1f5a52 0%, #164640 50%, #0e2f2b 100%);
+    background-size: 40px 40px, 40px 40px, cover, 160px, cover;
+    box-shadow:
+        inset 0 0 0 3px #b8954a,
+        inset 0 0 0 5px #0e2f2b,
+        inset 0 0 0 6px rgba(214, 186, 112, 0.6),
+        inset 0 0 50px rgba(0, 0, 0, 0.5),
+        0 24px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* Страницы: рисовая бумага, внизу — тушь далёких гор */
+.mmt-th-silk .mmt-page {
+    color: #2b2622;
+    background:
+        url('../assets/paper.png'),
+        linear-gradient(180deg, #f5efe0 0%, #ece3cd 100%);
+    background-size: 220px, cover;
+    background-blend-mode: multiply, normal;
+}
+
+.mmt-th-silk .mmt-page::after {
+    content: '';
+    position: absolute;
+    right: -10%;
+    bottom: -6%;
+    left: -10%;
+    height: 34%;
+    background:
+        radial-gradient(40% 70% at 20% 100%, rgba(60, 70, 70, 0.22), transparent 70%),
+        radial-gradient(35% 90% at 55% 100%, rgba(60, 70, 70, 0.16), transparent 70%),
+        radial-gradient(30% 60% at 85% 100%, rgba(60, 70, 70, 0.2), transparent 70%);
+    pointer-events: none;
+}
+
+.mmt-th-silk .mmt-page-left {
+    box-shadow: -2px 2px 0 #ddd2b8, -4px 4px 0 #b5a888, inset -40px 0 40px -28px rgba(80, 60, 20, 0.45);
+}
+
+.mmt-th-silk .mmt-page-right,
+.mmt-th-silk.mmt-portrait .mmt-page-left {
+    box-shadow: 2px 2px 0 #ddd2b8, 4px 4px 0 #b5a888, inset 40px 0 40px -28px rgba(80, 60, 20, 0.45);
+}
+
+/* Шёлковая лента-закладка у корешка */
+.mmt-th-silk .mmt-ribbon {
+    position: absolute;
+    top: -26px;
+    left: 26px;
+    width: 16px;
+    height: 34%;
+    max-height: 190px;
+    background: linear-gradient(90deg, #8a1c22, #c23a3f 50%, #8a1c22);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.4));
+}
+
+/* Паспарту с золотым кантом и облачными уголками */
+.mmt-th-silk .mmt-pockets {
+    gap: 22px;
+}
+
+.mmt-th-silk .mmt-pocket:not(.mmt-filled) {
+    box-shadow: inset 0 0 0 1px rgba(184, 149, 74, 0.35);
+    border-radius: 0;
+}
+
+.mmt-th-silk .mmt-pocket.mmt-filled {
+    border-radius: 0;
+    background: #e8dcc0;
+    box-shadow: inset 0 0 0 1px #b8954a, 0 3px 8px rgba(80, 60, 20, 0.35);
+}
+
+.mmt-th-silk .mmt-card {
+    inset: 7px;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.mmt-th-silk .mmt-pockets-hero .mmt-card {
+    inset: 10px;
+}
+
+.mmt-th-silk .mmt-card:hover,
+.mmt-th-silk .mmt-card:focus-visible {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--mmt-rar) 55%, transparent);
+}
+
+.mmt-th-silk .mmt-card-caption {
+    background: linear-gradient(transparent, rgba(10, 20, 18, 0.88) 55%);
+}
+
+.mmt-th-silk .mmt-cloud {
+    position: absolute;
+    z-index: 3;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #a8823a;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.mmt-th-silk .mmt-cloud-tl { top: 1px; left: 1px; }
+.mmt-th-silk .mmt-cloud-br { right: 1px; bottom: 1px; transform: rotate(180deg); }
+
+/* Печать-ханко на углу 5★ */
+.mmt-th-silk .mmt-hanko {
+    position: absolute;
+    right: -14px;
+    bottom: -12px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    font-family: 'Memento Brush', serif;
+    font-size: 28px;
+    line-height: 1;
+    color: #f7e8d8;
+    background: #b4282e;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 2px #f7e8d8, inset 0 0 0 4px #b4282e, 0 2px 4px rgba(60, 10, 10, 0.3);
+    opacity: 0.9;
+    transform: rotate(-4deg);
+    pointer-events: none;
+}
+
+/* Рубашка: красный лак, золотая рамка, иероглиф «память» */
+.mmt-th-silk .mmt-seal {
+    color: #f0cf7a;
+    background:
+        radial-gradient(circle at 20px 20px, transparent 9px, rgba(240, 200, 120, 0.18) 9.5px 10.5px, transparent 11px) 0 0 / 40px 40px,
+        radial-gradient(circle at 50% 42%, #b2262c 0%, #7a1218 75%);
+}
+
+.mmt-th-silk .mmt-seal::before {
+    inset: 8px;
+    border: 1px solid rgba(240, 207, 122, 0.6);
+    border-radius: 0;
+}
+
+.mmt-th-silk .mmt-seal .mmt-glyph {
+    font-family: 'Memento Brush', serif;
+    font-size: 3.2em;
+    text-shadow: 0 0 12px rgba(240, 207, 122, 0.6);
+}
+
+.mmt-th-silk .mmt-face-back .mmt-seal .mmt-glyph {
+    font-size: 7em;
+}
+
+/* Номера страниц кистью, приписка тушью */
+.mmt-th-silk .mmt-page-num {
+    z-index: 2;
+    font-family: 'Memento Brush', serif;
+    font-size: 1.6em;
+    color: rgba(60, 50, 30, 0.6);
+    opacity: 1;
+}
+
+.mmt-th-silk .mmt-scribble {
+    font-weight: 700;
+    color: #2b2622;
+}
+
+.mmt-th-silk .mmt-scribble-edit {
+    color: #2b2622;
+    background: rgba(255, 250, 235, 0.6);
+    border-color: rgba(120, 100, 60, 0.35);
+}

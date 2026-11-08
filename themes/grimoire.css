@@ -1,0 +1,237 @@
+/* Memento — тема «Гримуар».
+   Почти чёрная кожа цвета бычьей крови, кованые уголки и застёжка,
+   тёмный пергамент с магическим кругом, карточки в прорезях, рубашка — восковая печать. */
+
+/* Переплёт */
+.mmt-th-grimoire.mmt-binder {
+    border-radius: 12px;
+    background:
+        url('../assets/leather.png'),
+        url('../assets/grain.png'),
+        radial-gradient(120% 100% at 30% 20%, #3e1418 0%, #24090c 60%, #140406 100%);
+    background-size: 200px, 160px, cover;
+    background-blend-mode: soft-light, overlay, normal;
+    box-shadow:
+        inset 0 0 0 2px #0a0203,
+        inset 0 0 60px rgba(0, 0, 0, 0.7),
+        0 24px 50px rgba(0, 0, 0, 0.7);
+}
+
+/* Кованые уголки */
+.mmt-th-grimoire .mmt-iron {
+    position: absolute;
+    z-index: 30;
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, #8a8a90 0%, #3a3a40 45%, #6a6a72 60%, #2a2a2e 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.7));
+    pointer-events: none;
+}
+
+.mmt-th-grimoire .mmt-iron-tl { top: -1px; left: -1px; clip-path: polygon(0 0, 100% 0, 0 100%); border-top-left-radius: 10px; }
+.mmt-th-grimoire .mmt-iron-tr { top: -1px; right: -1px; clip-path: polygon(0 0, 100% 0, 100% 100%); border-top-right-radius: 10px; }
+.mmt-th-grimoire .mmt-iron-bl { bottom: -1px; left: -1px; clip-path: polygon(0 0, 0 100%, 100% 100%); border-bottom-left-radius: 10px; }
+.mmt-th-grimoire .mmt-iron-br { right: -1px; bottom: -1px; clip-path: polygon(100% 0, 0 100%, 100% 100%); border-bottom-right-radius: 10px; }
+
+/* Застёжка поверх края правой страницы */
+.mmt-th-grimoire .mmt-clasp {
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    z-index: 30;
+    width: 46px;
+    height: 34px;
+    margin-top: -17px;
+    border-radius: 8px 0 0 8px;
+    background: linear-gradient(180deg, #2a1012, #160608);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+}
+
+.mmt-th-grimoire .mmt-clasp::after {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c8c8cc, #5a5a60 60%, #222);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* На телефоне страница одна и узкая — застёжка налезала бы на карточки */
+.mmt-th-grimoire.mmt-portrait .mmt-clasp {
+    display: none;
+}
+
+/* Страницы: тёмный пергамент с выцветшим золотом */
+.mmt-th-grimoire .mmt-page {
+    color: #f3e6cc;
+    background:
+        radial-gradient(120% 110% at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.55) 100%),
+        url('../assets/paper.png'),
+        linear-gradient(180deg, #2a1d17 0%, #1a110d 100%);
+    background-size: cover, 200px, cover;
+    background-blend-mode: normal, soft-light, normal;
+}
+
+/* Магический круг под карточками */
+.mmt-th-grimoire .mmt-page::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 84%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-conic-gradient(rgba(214, 170, 90, 0.24) 0deg 1deg, transparent 1deg 15deg);
+    box-shadow: inset 0 0 0 1px rgba(214, 170, 90, 0.22);
+    transform: translate(-50%, -50%);
+    -webkit-mask: radial-gradient(circle closest-side, transparent 86%, #000 86.5% 99%, transparent 99.5%);
+    mask: radial-gradient(circle closest-side, transparent 86%, #000 86.5% 99%, transparent 99.5%);
+    pointer-events: none;
+}
+
+.mmt-th-grimoire .mmt-page::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 64%;
+    aspect-ratio: 1;
+    border: 1px solid rgba(214, 170, 90, 0.16);
+    border-radius: 50%;
+    box-shadow: 0 0 0 10px transparent, 0 0 0 11px rgba(214, 170, 90, 0.1);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.mmt-th-grimoire .mmt-page-left {
+    border-radius: 4px 0 0 4px;
+    box-shadow: -2px 2px 0 #3a2a20, -4px 4px 0 #120b08, inset -40px 0 40px -26px rgba(0, 0, 0, 0.75);
+}
+
+.mmt-th-grimoire .mmt-page-right,
+.mmt-th-grimoire.mmt-portrait .mmt-page-left {
+    border-radius: 0 4px 4px 0;
+    box-shadow: 2px 2px 0 #3a2a20, 4px 4px 0 #120b08, inset 40px 0 40px -26px rgba(0, 0, 0, 0.75);
+}
+
+/* Тень в корешке */
+.mmt-th-grimoire .mmt-gutter {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -16px;
+    width: 32px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0.55) 50%, rgba(0, 0, 0, 0.45) 55%, transparent);
+}
+
+/* Карточки в прорезях пергамента */
+.mmt-th-grimoire .mmt-pockets {
+    gap: 24px;
+}
+
+.mmt-th-grimoire .mmt-pocket:not(.mmt-filled) {
+    box-shadow: inset 0 0 0 1px rgba(214, 170, 90, 0.18);
+    border-radius: 2px;
+}
+
+.mmt-th-grimoire .mmt-card {
+    inset: 3px;
+    border-radius: 2px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+
+.mmt-th-grimoire .mmt-card:hover,
+.mmt-th-grimoire .mmt-card:focus-visible {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.75), 0 0 16px color-mix(in srgb, var(--mmt-rar) 50%, transparent);
+}
+
+.mmt-th-grimoire .mmt-card.mmt-r5:not(.mmt-sealed) {
+    border-width: 3px;
+}
+
+.mmt-th-grimoire .mmt-card-caption {
+    background: linear-gradient(transparent, rgba(20, 6, 4, 0.88) 55%);
+}
+
+.mmt-th-grimoire .mmt-slit {
+    position: absolute;
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #3a2a20, #24180f);
+    box-shadow: inset 0 0 0 1px rgba(214, 170, 90, 0.25);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
+    pointer-events: none;
+}
+
+.mmt-th-grimoire .mmt-slit-tl { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.mmt-th-grimoire .mmt-slit-br { right: 0; bottom: 0; clip-path: polygon(100% 0, 0 100%, 100% 100%); }
+
+/* Рубашка: чёрная кожа и восковая печать */
+.mmt-th-grimoire .mmt-seal {
+    background:
+        url('../assets/leather.png'),
+        radial-gradient(circle at 50% 42%, #2a1416, #0c0405 75%);
+    background-size: 150px, cover;
+    background-blend-mode: soft-light, normal;
+}
+
+.mmt-th-grimoire .mmt-seal::before {
+    display: none;
+}
+
+.mmt-th-grimoire .mmt-wax {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 54%;
+    aspect-ratio: 1;
+    border-radius: 47% 53% 50% 48% / 52% 46% 54% 48%;
+    background: radial-gradient(circle at 38% 32%, #e2555d, #a3161f 55%, #6a0a10);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Вдавленный круг печати */
+.mmt-th-grimoire .mmt-wax::before {
+    content: '';
+    position: absolute;
+    width: 38%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    box-shadow: inset 0 2px 3px rgba(60, 0, 4, 0.7), 0 1px 0 rgba(255, 160, 160, 0.35);
+}
+
+.mmt-th-grimoire .mmt-seal .mmt-wax .mmt-seal-mark {
+    font-size: 1.4em;
+    color: #6a0a10;
+    text-shadow: 0 1px 0 rgba(255, 160, 160, 0.4), 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.mmt-th-grimoire .mmt-face-back .mmt-wax .mmt-seal-mark {
+    font-size: 3.4em;
+}
+
+/* Номера страниц римскими, приписка выцветшим золотом */
+.mmt-th-grimoire .mmt-page-num {
+    z-index: 2;
+    font-family: 'Memento SC', serif;
+    font-size: 1em;
+    color: rgba(214, 170, 90, 0.65);
+    opacity: 1;
+}
+
+.mmt-th-grimoire .mmt-scribble {
+    color: #d6aa5a;
+    text-shadow: 0 0 6px rgba(214, 170, 90, 0.35);
+}
+
+.mmt-th-grimoire .mmt-scribble-edit {
+    color: #d6aa5a;
+    border-color: rgba(214, 170, 90, 0.35);
+}

@@ -1,7 +1,7 @@
 // Memento — раскладка карточек по страницам и вёрстка биндера.
 
 import { escapeHtml } from './store.js';
-import { scribbleSpot, scribbleTilt, cardTilt, sealHtml, holderDecorHtml, pageDecorHtml } from './themes.js';
+import { scribbleSpot, scribbleTilt, cardTilt, sealHtml, holderDecorHtml, pageDecorHtml, pageLabel } from './themes.js';
 
 export const POCKETS_PER_PAGE = 4;   // 3★ и 4★ — сетка 2×2
 
@@ -122,7 +122,7 @@ export function pageHtml(page, side, pageNumber, opts) {
             <div class="mmt-holes" aria-hidden="true"><span></span><span></span><span></span></div>
             ${pageDecorHtml(opts.themeId, page, side, pageNumber, opts.info)}
             ${inner}
-            <div class="mmt-page-num">${pageNumber}</div>
+            <div class="mmt-page-num">${pageLabel(opts.themeId, pageNumber)}</div>
         </div>`;
 }
 
