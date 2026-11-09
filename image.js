@@ -401,27 +401,6 @@ async function uploadImage(dataUrl) {
     return result.path;
 }
 
-/** Удаляет файл картинки, но только наш: в картинках таверны и с нашим префиксом. */
-export async function deleteImageFile(path) {
-    const p = String(path || '');
-    const file = p.split('/').pop() || '';
-    if (!/(^|\/)user\/images\//.test(p) || p.includes('..') || p.includes('\\') || !file.startsWith(`${FILE_PREFIX}_`)) {
-        console.warn('[Memento] не трогаю чужой файл:', p);
-        return false;
-    }
-    try {
-        const response = await fetch('/api/images/delete', {
-            method: 'POST',
-            headers: ctx().getRequestHeaders(),
-            body: JSON.stringify({ path: p }),
-        });
-        return response.ok || response.status === 404;
-    } catch (error) {
-        console.warn('[Memento] файл не удалился:', p, error?.message);
-        return false;
-    }
-}
-
 // ---------- Рефы из слотов Frame ----------
 
 function hasFrameImage(ref) {

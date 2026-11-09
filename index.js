@@ -8,7 +8,7 @@ import {
     ctx, getSettings, saveSettings, escapeHtml, makeId, currentChatId, getAlbum, saveAlbum, saveAlbumDebounced,
     reconcileAlbum, memoriesWord, confirmPopup, findCardMessage, TOAST_TITLE,
 } from './store.js';
-import { drawImage, deleteImageFile, getMissingDrawSetting } from './image.js';
+import { drawImage, getMissingDrawSetting } from './image.js';
 import { layoutPages, bookPagesHtml, pageIndexOf, starsText, rarityOf } from './album.js';
 import { THEMES, getTheme, effectiveThemeId, bindingHtml, coverDecorHtml, sealHtml, caseNumber } from './themes.js';
 import { PageFlip } from './lib/page-flip.module.js';
@@ -582,27 +582,21 @@ function findCard(cardId) {
 }
 
 /** Файл карточки можно удалять, только если он родился в этом чате и больше ни у кого его нет. */
-function canDeleteFile(card, path) {
-    if (!path || card.imageChat !== currentChatId()) return false;
-    return !getAlbum().cards.some((c) => c !== card && c.image === path);
-}
-
 function refreshViews(cardId) {
     if (!isOpen()) return;
     if (albumVisible()) render();
     if (viewId === cardId) openCardView(cardId, { waitClick: solo });
 }
 
+// Файлы картинок Memento никогда не удаляет: при перерисовке и удалении карточки
+// старые остаются в папке картинок таверны — подчищать их можно самой.
 async function applyImage(card, image) {
-    const oldPath = card.image;
-    const oldDeletable = canDeleteFile(card, oldPath);
     card.image = image.path;
     card.imageChat = currentChatId();
     card.imageMeta = { provider: image.provider, model: image.model, refs: image.refs, style: image.style, createdAt: image.createdAt };
     card.drawStatus = null;
     card.drawError = null;
     await saveAlbum();
-    if (oldDeletable && oldPath !== image.path) await deleteImageFile(oldPath);
 }
 
 async function drawCard(cardId) {
@@ -634,11 +628,7 @@ async function drawCard(cardId) {
         failure = error;
     }
     drawJobs.delete(cardId);
-    if (controller.signal.aborted) {
-        // Карточку удалили, пока рисовалась — файл ей больше не нужен
-        if (image?.path) await deleteImageFile(image.path);
-        return;
-    }
+    if (controller.signal.aborted) return;   // карточку удалили, пока рисовалась; если файл успел сохраниться — пусть лежит
 
     if (currentChatId() !== chatId) {
         if (image) {
@@ -652,10 +642,7 @@ async function drawCard(cardId) {
     }
 
     const live = findCard(cardId);
-    if (!live) {
-        if (image?.path) await deleteImageFile(image.path);
-        return;
-    }
+    if (!live) return;
     if (image) {
         await applyImage(live, image);
         if (live.revealed === false) announceNew(cardId);
@@ -717,7 +704,6 @@ async function deliverMailbox() {
         for (const item of mine) {
             const card = album.cards.find((c) => c.id === item.cardId);
             if (card) await applyImage(card, item.image);
-            else await deleteImageFile(item.image?.path);
         }
         changed = false;   // applyImage уже сохранил
     }
@@ -992,12 +978,8 @@ async function deleteCard(cardId) {
     const album = getAlbum();
     const card = album?.cards.find((c) => c.id === cardId);
     if (!card) return;
-    // В ветке картинка принадлежит родительскому чату — её не трогаем
-    const deletable = canDeleteFile(card, card.image);
-    const text = deletable
-        ? 'Удалить это воспоминание из альбома? Картинка тоже удалится.'
-        : 'Удалить это воспоминание из альбома?';
-    if (!(await confirmPopup(text))) return;
+    // Удаляется только запись — файл картинки остаётся в папке
+    if (!(await confirmPopup('Удалить это воспоминание из альбома?'))) return;
     const job = drawJobs.get(cardId);
     if (job) {
         job.controller.abort();
@@ -1005,7 +987,6 @@ async function deleteCard(cardId) {
     }
     album.cards = album.cards.filter((c) => c.id !== cardId);
     await saveAlbum();
-    if (deletable) await deleteImageFile(card.image);
     closeCardView();
     render();
 }
