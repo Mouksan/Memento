@@ -153,10 +153,9 @@ export function noteText(quote) {
     return `${head}…`;
 }
 
-/** Одна карточка сверху и записка с её цитатой; у запечатанной — сложенная записка без текста. */
+/** Карточка по центру сверху, под ней записка с её цитатой; у запечатанной — сложенная записка без текста. */
 function noteLayoutHtml(page, opts) {
     const card = page.cards[0];
-    const flip = page.mirror ? ' mmt-flip-x' : '';
     const tilt = Math.round((seeded(card.id, 'note-tilt') * 3 - 1.5) * 10) / 10;
     let note;
     if (card.revealed === false) {
@@ -168,7 +167,7 @@ function noteLayoutHtml(page, opts) {
             ? `<div class="mmt-note${size}" style="--mmt-note-tilt: ${tilt}deg;"><span class="mmt-note-text">${escapeHtml(text)}</span></div>`
             : '';
     }
-    return `<div class="mmt-pockets mmt-pockets-note${flip}">${pocketHtml(card, opts)}${note}</div>`;
+    return `<div class="mmt-pockets mmt-pockets-note">${pocketHtml(card, opts)}${note}</div>`;
 }
 
 export function pageHtml(page, side, pageNumber, opts) {
