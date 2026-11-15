@@ -235,3 +235,16 @@
     color: #d6aa5a;
     border-color: rgba(214, 170, 90, 0.35);
 }
+
+/* Записка: выцветшие золотые чернила прямо по пергаменту */
+.mmt-th-grimoire .mmt-note {
+    color: #d6aa5a;
+    text-shadow: 0 0 6px rgba(214, 170, 90, 0.3);
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.28), transparent);
+    box-shadow: none;
+}
+
+.mmt-th-grimoire .mmt-note-sealed {
+    background: linear-gradient(160deg, #3a2a20, #24180f);
+    box-shadow: inset 0 0 0 1px rgba(214, 170, 90, 0.25), 0 3px 8px rgba(0, 0, 0, 0.6);
+}

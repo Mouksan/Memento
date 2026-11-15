@@ -305,3 +305,36 @@
     background: rgba(255, 255, 255, 0.6);
     border-color: rgba(60, 60, 70, 0.3);
 }
+
+/* Записка: машинописная выдержка из протокола */
+.mmt-th-dossier .mmt-note {
+    font-family: 'Memento Mono', monospace;
+    font-size: clamp(10px, 3.5cqw, 16px);
+    line-height: 1.55;
+    color: #2a2a2e;
+    background: #fbfaf5;
+    box-shadow: 0 3px 8px rgba(40, 30, 10, 0.3);
+}
+
+.mmt-th-dossier .mmt-note-mid { font-size: clamp(9.5px, 3.2cqw, 15px); }
+.mmt-th-dossier .mmt-note-long { font-size: clamp(9px, 2.9cqw, 14px); }
+
+.mmt-th-dossier .mmt-note:not(.mmt-note-sealed)::before {
+    content: 'ВЫДЕРЖКА ИЗ ПРОТОКОЛА';
+    display: block;
+    margin-bottom: 0.5em;
+    font-size: 0.78em;
+    letter-spacing: 2px;
+    color: #b2222a;
+}
+
+.mmt-th-dossier .mmt-note-text::before { content: '«'; }
+.mmt-th-dossier .mmt-note-text::after { content: '»'; }
+
+.mmt-th-dossier .mmt-note-sealed {
+    background: #c9a96c;
+}
+
+.mmt-th-dossier.mmt-portrait .mmt-note { font-size: clamp(10px, 4.4cqw, 16px); }
+.mmt-th-dossier.mmt-portrait .mmt-note-mid { font-size: clamp(9.5px, 4cqw, 15px); }
+.mmt-th-dossier.mmt-portrait .mmt-note-long { font-size: clamp(9px, 3.6cqw, 14px); }

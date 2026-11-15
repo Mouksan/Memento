@@ -182,3 +182,19 @@
     background: rgba(255, 250, 235, 0.6);
     border-color: rgba(120, 100, 60, 0.35);
 }
+
+/* Записка: полоска рисовой бумаги с золотой кромкой */
+.mmt-th-silk .mmt-note {
+    color: #2b2622;
+    background:
+        url('../assets/paper.png'),
+        #f8f2e2;
+    background-size: 200px, cover;
+    background-blend-mode: multiply, normal;
+    box-shadow: inset 0 0 0 1px rgba(184, 149, 74, 0.55), 0 3px 8px rgba(80, 60, 20, 0.3);
+}
+
+.mmt-th-silk .mmt-note-sealed {
+    background: #b2262c;
+    box-shadow: inset 0 0 0 1px rgba(240, 207, 122, 0.6), 0 3px 8px rgba(80, 20, 20, 0.35);
+}

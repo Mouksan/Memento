@@ -228,3 +228,16 @@
     color: #f6f3ec;
     font-weight: 700;
 }
+
+/* Записка: белый маркер по чёрной бумаге */
+.mmt-th-polaroid .mmt-note {
+    font-weight: 700;
+    color: #f6f3ec;
+    background: none;
+    box-shadow: none;
+}
+
+.mmt-th-polaroid .mmt-note-sealed {
+    background: linear-gradient(180deg, #fbfaf6, #efede6);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55);
+}

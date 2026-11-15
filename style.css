@@ -193,6 +193,7 @@
 .mmt-page {
     position: relative;
     box-sizing: border-box;
+    container-type: inline-size;   /* записка с цитатой меряет шрифт от ширины страницы */
     padding: 22px 22px 30px;
     overflow: hidden;
 }
@@ -271,6 +272,93 @@
 
 .mmt-pockets-hero .mmt-pocket {
     width: 76%;
+}
+
+/* Недобитая страница перед 5★ — без пустых кармашков.
+   Сетка в 4 колонки, карточка занимает две: размер тот же, что в 2×2,
+   а одиночку в ряду можно поставить по центру. mmt-flip-x — зеркальный вариант. */
+.mmt-pockets-diag,
+.mmt-pockets-tri,
+.mmt-pockets-note {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.mmt-pockets-diag > .mmt-pocket,
+.mmt-pockets-tri > .mmt-pocket,
+.mmt-pockets-note > .mmt-pocket {
+    grid-column: span 2;
+}
+
+/* Две — по диагонали */
+.mmt-pockets-diag > .mmt-pocket:nth-child(1) { grid-area: 1 / 1 / 2 / 3; }
+.mmt-pockets-diag > .mmt-pocket:nth-child(2) { grid-area: 2 / 3 / 3 / 5; }
+.mmt-pockets-diag.mmt-flip-x > .mmt-pocket:nth-child(1) { grid-area: 1 / 3 / 2 / 5; }
+.mmt-pockets-diag.mmt-flip-x > .mmt-pocket:nth-child(2) { grid-area: 2 / 1 / 3 / 3; }
+
+/* Три — треугольником: вершиной вниз или (зеркально) вверх */
+.mmt-pockets-tri > .mmt-pocket:nth-child(1) { grid-area: 1 / 1 / 2 / 3; }
+.mmt-pockets-tri > .mmt-pocket:nth-child(2) { grid-area: 1 / 3 / 2 / 5; }
+.mmt-pockets-tri > .mmt-pocket:nth-child(3) { grid-area: 2 / 2 / 3 / 4; }
+.mmt-pockets-tri.mmt-flip-x > .mmt-pocket:nth-child(1) { grid-area: 1 / 2 / 2 / 4; }
+.mmt-pockets-tri.mmt-flip-x > .mmt-pocket:nth-child(2) { grid-area: 2 / 1 / 3 / 3; }
+.mmt-pockets-tri.mmt-flip-x > .mmt-pocket:nth-child(3) { grid-area: 2 / 3 / 3 / 5; }
+
+/* Страница-заметка: карточка сверху, под ней записка с цитатой */
+.mmt-pockets-note > .mmt-pocket { grid-area: 1 / 1 / 2 / 3; }
+.mmt-pockets-note.mmt-flip-x > .mmt-pocket { grid-area: 1 / 3 / 2 / 5; }
+
+.mmt-note {
+    position: relative;
+    z-index: 2;
+    grid-area: 2 / 1 / 3 / 5;
+    justify-self: start;
+    align-self: start;
+    box-sizing: border-box;
+    width: 90%;
+    margin-top: 4px;
+    padding: 0.8em 1.05em;
+    font-family: 'Memento Hand', cursive;
+    font-size: clamp(12px, 5.6cqw, 26px);     /* от ширины страницы: на телефоне мельче */
+    line-height: 1.32;
+    color: #2f3a6a;
+    overflow-wrap: anywhere;
+    background: #fbf6ea;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+    transform: rotate(var(--mmt-note-tilt, -1deg));
+}
+
+.mmt-flip-x > .mmt-note { justify-self: end; }
+.mmt-note-mid { font-size: clamp(11.5px, 5cqw, 23px); }
+.mmt-note-long { font-size: clamp(11px, 4.4cqw, 20px); }
+
+.mmt-portrait .mmt-note { width: 96%; font-size: clamp(12px, 7cqw, 26px); }
+.mmt-portrait .mmt-note-mid { font-size: clamp(11.5px, 6.3cqw, 23px); }
+.mmt-portrait .mmt-note-long { font-size: clamp(11px, 5.6cqw, 20px); }
+
+/* Запечатанная: сложенная записка без текста — цитата откроется вместе с карточкой */
+.mmt-note-sealed {
+    width: 46%;
+    aspect-ratio: 3 / 2;
+    padding: 0;
+}
+
+.mmt-note-sealed::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.14), rgba(255, 255, 255, 0.35));
+}
+
+.mmt-note-sealed .mmt-note-fold {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 22%;
+    aspect-ratio: 1;
+    background: linear-gradient(225deg, transparent 50%, rgba(0, 0, 0, 0.16) 50%, rgba(255, 255, 255, 0.5) 100%);
 }
 
 .mmt-pocket {

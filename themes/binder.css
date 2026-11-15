@@ -254,3 +254,17 @@
     color: rgba(236, 230, 252, 0.82);
     text-shadow: 0 0 1px rgba(236, 230, 252, 0.3);
 }
+
+/* Записка: белая гелевая ручка прямо по чёрному картону */
+.mmt-th-binder .mmt-note {
+    color: rgba(236, 230, 252, 0.86);
+    background: none;
+    box-shadow: none;
+    border-left: 1.5px solid rgba(236, 230, 252, 0.22);
+}
+
+.mmt-th-binder .mmt-note-sealed {
+    background: linear-gradient(160deg, #2c2a36, #1f1e26);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+}
