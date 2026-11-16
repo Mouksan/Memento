@@ -9,7 +9,7 @@ export const POCKETS_PER_PAGE = 4;   // 3★ и 4★ — сетка 2×2
  * Раскладка по страницам, в хронологии сообщений.
  * 3★ и 4★ ложатся по 4 на страницу; каждая 5★ получает свою страницу.
  * Если 5★ застаёт страницу недобитой, пустых дыр посреди альбома не оставляем:
- *  - 1 карточка — страница-заметка: карточка и записка с её цитатой;
+ *  - 1 карточка — страница-заметка: карточка и записка с текстом с её оборота;
  *  - 2–3 карточки — жребий 50/50 (постоянный, от id 5★):
  *    орёл — страница добирается следующими 3–4★ (только теми, что идут сразу за этой 5★
  *    и до следующей 5★), а 5★ встаёт после неё; если добрать до 4 нечем — как решка;
@@ -143,9 +143,9 @@ function scribbleHtml(card) {
 
 export const NOTE_MAX_CHARS = 300;
 
-/** Цитата для записки: до 300 знаков, обрезка по границе слова и «…». */
-export function noteText(quote) {
-    const text = String(quote || '').replace(/\s+/g, ' ').trim();
+/** Текст для записки (с оборота карточки): до 300 знаков, обрезка по границе слова и «…». */
+export function noteText(note) {
+    const text = String(note || '').replace(/\s+/g, ' ').trim();
     if (text.length <= NOTE_MAX_CHARS) return text;
     const cut = text.slice(0, NOTE_MAX_CHARS + 1);
     const space = cut.lastIndexOf(' ');
@@ -153,7 +153,7 @@ export function noteText(quote) {
     return `${head}…`;
 }
 
-/** Карточка по центру сверху, под ней записка с её цитатой; у запечатанной — сложенная записка без текста. */
+/** Карточка по центру сверху, под ней записка с текстом с её оборота; у запечатанной — сложенная записка без текста. */
 function noteLayoutHtml(page, opts) {
     const card = page.cards[0];
     const tilt = Math.round((seeded(card.id, 'note-tilt') * 3 - 1.5) * 10) / 10;
@@ -161,7 +161,7 @@ function noteLayoutHtml(page, opts) {
     if (card.revealed === false) {
         note = `<div class="mmt-note mmt-note-sealed" style="--mmt-note-tilt: ${tilt}deg;" aria-hidden="true"><span class="mmt-note-fold"></span></div>`;
     } else {
-        const text = noteText(card.quote);
+        const text = noteText(card.note);   // текст с оборота карточки
         const size = text.length > 220 ? ' mmt-note-long' : text.length > 140 ? ' mmt-note-mid' : '';
         note = text
             ? `<div class="mmt-note${size}" style="--mmt-note-tilt: ${tilt}deg;"><span class="mmt-note-text">${escapeHtml(text)}</span></div>`

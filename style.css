@@ -193,7 +193,7 @@
 .mmt-page {
     position: relative;
     box-sizing: border-box;
-    container-type: inline-size;   /* записка с цитатой меряет шрифт от ширины страницы */
+    container-type: inline-size;   /* записка на странице-заметке меряет шрифт от ширины страницы */
     padding: 22px 22px 30px;
     overflow: hidden;
 }
@@ -303,10 +303,12 @@
 .mmt-pockets-tri.mmt-flip-x > .mmt-pocket:nth-child(2) { grid-area: 2 / 1 / 3 / 3; }
 .mmt-pockets-tri.mmt-flip-x > .mmt-pocket:nth-child(3) { grid-area: 2 / 3 / 3 / 5; }
 
-/* Страница-заметка: карточка по центру сверху, записка по центру
-   свободного места между карточкой и низом страницы */
+/* Страница-заметка: карточка и записка по центру, свободное место делится
+   на три равных промежутка — над карточкой, между ними и под запиской */
 .mmt-pockets-note {
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto;
+    align-content: space-evenly;
+    row-gap: 0;
     height: 100%;
 }
 
@@ -317,7 +319,6 @@
     z-index: 2;
     grid-area: 2 / 1 / 3 / 5;
     justify-self: center;
-    align-self: center;
     box-sizing: border-box;
     width: 90%;
     padding: 0.8em 1.05em;
@@ -338,7 +339,7 @@
 .mmt-portrait .mmt-note-mid { font-size: clamp(11.5px, 6.3cqw, 23px); }
 .mmt-portrait .mmt-note-long { font-size: clamp(11px, 5.6cqw, 20px); }
 
-/* Запечатанная: сложенная записка без текста — цитата откроется вместе с карточкой */
+/* Запечатанная: сложенная записка без текста — текст откроется вместе с карточкой */
 .mmt-note-sealed {
     width: 46%;
     aspect-ratio: 3 / 2;
