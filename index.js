@@ -1032,6 +1032,20 @@ jQuery(async () => {
     addWandButton();
     initCapture((moment) => develop(moment));
 
+    // Вход для других расширений (Thread: «В альбом Memento» у ачивки).
+    // Тот же «Проявляем воспоминание…», что и по кнопке у сообщения, только сцену передают снаружи.
+    window.Memento = Object.freeze({
+        version: 1,
+        develop({ from, to, hint } = {}) {
+            const a = Number.parseInt(from, 10);
+            const b = Number.parseInt(to, 10);
+            const last = (ctx().chat || []).length - 1;
+            if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < a || b > last) return false;
+            develop({ mode: 'scene', from: a, to: b, hint: String(hint || '') });
+            return true;
+        },
+    });
+
     const { eventSource, event_types } = ctx();
     eventSource.on(event_types.CHAT_CHANGED, onChatChanged);
     // Подгрузка старых сообщений и новые посты — кнопке в меню нужны и они

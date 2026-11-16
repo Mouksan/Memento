@@ -114,6 +114,9 @@ export function buildMomentPrompt(moment, cards) {
     if (persona) parts.push(`# {{user}}\n${persona}`);
     parts.push(`# ${moment.mode === 'quote' ? 'Messages' : 'Scene'}\n${sceneText}`);
     if (moment.mode === 'quote') parts.push(`# CHOSEN QUOTE (from #${moment.mesId})\n${moment.quote}`);
+    // Подсказка от другого расширения (Thread: ачивка) — что в этой сцене главное
+    const hint = String(moment.hint || '').trim().slice(0, 300);
+    if (hint && moment.mode !== 'quote') parts.push(`# WHAT MATTERS IN THIS SCENE\n${hint}\nPick the moment of the scene that shows this best.`);
     parts.push(`# Album\n${albumStats(cards)}`);
     // Имена как в слотах Frame — по ним к картинке цепляются рефы (как в Storyboard)
     const names = getFrameNames();
