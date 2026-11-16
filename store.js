@@ -20,6 +20,7 @@ export const DEFAULT_LOCAL_ENDPOINT = 'http://127.0.0.1:8001';
 export const IMAGE_SIZES = ['1K', '2K', '4K'];
 
 export const DEFAULT_SETTINGS = Object.freeze({
+    quickbarButton: true, // иконка Memento в панели быстрых ответов
     version: 1,
     theme: 'binder',             // тема альбома (пока одна)
 

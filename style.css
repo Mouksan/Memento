@@ -1674,3 +1674,44 @@
         max-height: none;
     }
 }
+
+/* ---------- Кнопка в быстрых ответах (порт из Junket) ---------- */
+
+.mmt-qb {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mmt-qb--no-chat {
+    opacity: 0.4;
+}
+
+.mmt-qb--busy {
+    color: var(--SmartThemeQuoteColor);
+    animation: mmt-qb-pulse 1.4s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes mmt-qb-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mmt-qb--busy {
+        opacity: 0.8;
+        animation: none;
+        will-change: auto;
+    }
+}

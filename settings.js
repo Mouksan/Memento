@@ -160,6 +160,10 @@ function drawerHtml() {
                         <i class="fa-solid ${ICON}"></i>
                         <span>Открыть альбом</span>
                     </button>
+                    <label class="checkbox_label mmt-check" for="mmt_quickbar">
+                        <input type="checkbox" id="mmt_quickbar" ${s.quickbarButton !== false ? 'checked' : ''}>
+                        <span>Кнопка в быстрых ответах</span>
+                    </label>
                     ${categoryHtml('fa-book-open', 'Альбом', album)}
                     ${categoryHtml('fa-plug', 'Модель для карточек', model)}
                     ${categoryHtml('fa-paintbrush', 'Рисование', draw)}
@@ -209,7 +213,7 @@ function bindNumber(id, key, min, max, fallback) {
     });
 }
 
-export function addSettingsDrawer(onOpenWindow) {
+export function addSettingsDrawer(onOpenWindow, onQuickbarChange = () => {}) {
     const host = document.getElementById('extensions_settings2') || document.getElementById('extensions_settings');
     if (!host || document.getElementById('mmt-settings')) return;
 
@@ -219,6 +223,11 @@ export function addSettingsDrawer(onOpenWindow) {
     host.appendChild(wrap);
 
     wrap.querySelector('.mmt-open-btn').addEventListener('click', () => onOpenWindow());
+    wrap.querySelector('#mmt_quickbar').addEventListener('change', (e) => {
+        getSettings().quickbarButton = e.currentTarget.checked;
+        saveSettings();
+        onQuickbarChange();
+    });
 
     const root = document.getElementById('mmt_settings_root');
     root.addEventListener('click', (e) => {

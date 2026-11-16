@@ -17,6 +17,7 @@ import { addSettingsDrawer, ICON } from './settings.js';
 import { initCapture, resetCapture, addMessageButtons } from './capture.js';
 import { buildMomentPrompt, extractJson, cardFromAnswer, cleanMessageText } from './prompt.js';
 import { requestModel } from './connection.js';
+import { createQuickbarButton } from './quickbar.js';
 
 // ---------- Окно ----------
 
@@ -127,6 +128,16 @@ function listenKeys(on) {
     if (on) window.addEventListener('keydown', onKeyDown, true);
     else window.removeEventListener('keydown', onKeyDown, true);
 }
+
+// Иконка в быстрых ответах: открывает и закрывает альбом; пульсирует, пока проявляется карточка.
+const quickbar = createQuickbarButton({
+    id: 'mmt_quickbar',
+    cls: 'mmt-qb',
+    icon: ICON,
+    title: 'Memento',
+    isWanted: () => getSettings().quickbarButton !== false,
+    onClick: () => (isOpen() ? closeWindow() : openWindow()),
+});
 
 function openWindow(nextView = 'album') {
     if (!overlayEl) overlayEl = buildWindow();
@@ -523,6 +534,7 @@ async function develop(moment) {
     const toast = toastr.info('Проявляем воспоминание…', TOAST_TITLE, { timeOut: 0, extendedTimeOut: 0, tapToDismiss: false });
     const job = { controller, chatId, toast };
     jobs.add(job);
+    quickbar.setBusy(true);
 
     try {
         const { instruction, contextText, from, to } = buildMomentPrompt(moment, getAlbum().cards);
@@ -568,6 +580,7 @@ async function develop(moment) {
         }
     } finally {
         jobs.delete(job);
+        quickbar.setBusy(jobs.size > 0);
         toastr.clear(toast);
     }
 }
@@ -1028,8 +1041,9 @@ function onChatChanged() {
 
 jQuery(async () => {
     getSettings();
-    addSettingsDrawer(() => openWindow());
+    addSettingsDrawer(() => openWindow(), () => quickbar.sync());
     addWandButton();
+    quickbar.start();
     initCapture((moment) => develop(moment));
 
     // Вход для других расширений (Thread: «В альбом Memento» у ачивки).
